@@ -36,9 +36,10 @@
 <body class="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-500 selection:text-white">
 
   <!-- ================================================================= -->
-  <!-- ⚙️ BANCO DE DADOS DOS VERBETES (CADASTRE NOVOS ITENS AQUI!)        -->
+  <!-- ⚙️ BANCO DE DADOS DOS VERBETES                                    -->
   <!-- ================================================================= -->
   <script>
+    // Se você baixar o arquivo atualizado pelo painel admin, ele substituirá esta lista automaticamente!
     const database = [
       {
         id: "motor-dc",
@@ -50,7 +51,6 @@
         short: "Motor de corrente contínua para dar movimento aos robôs.",
         description: "O Motor de Corrente Contínua (DC) é um atuador eletromecânico que converte energia elétrica em movimento rotacional. Ele é amplamente utilizado em rodas de robôs móveis, garras e pequenos mecanismos que necessitam de força motriz direta.",
         example: "Para controlar a velocidade e o sentido de rotação de um Motor DC no Micro:bit ou Arduino, normalmente utilizamos um circuito chamado Ponte H (como o chip L298N ou blocos de extensão dedicados).",
-        // Tipo de mídia suportado: link de imagem/gif (terminado em .png, .jpg, .gif) ou link de incorporação do YouTube (embed)
         media: "https://media.giphy.com/media/l41lWfcNbLXGQ8sU0/giphy.gif"
       },
       {
@@ -75,7 +75,7 @@
         short: "Diodo emissor de luz capaz de gerar milhões de cores combinando Vermelho, Verde e Azul.",
         description: "O LED RGB reúne três pequenos LEDs dentro de um único componente: um Vermelho (Red), um Verde (Green) e um Azul (Blue). Controlando a intensidade elétrica enviada para cada um deles, você pode misturar as cores e criar qualquer tom imaginável.",
         example: "No MakeCode, você pode programar o LED RGB para acender em verde quando o robô estiver livre, amarelo se houver obstáculo próximo e vermelho se precisar parar imediatamente.",
-        media: "https://www.youtube.com/embed/S_B78Gq8oQk" // Exemplo de vídeo incorporado do YouTube
+        media: "https://www.youtube.com/embed/S_B78Gq8oQk"
       },
       {
         id: "servo-motor",
@@ -87,11 +87,25 @@
         short: "Atuador que permite controlar a posição angular exata (geralmente entre 0° e 180°).",
         description: "Diferente do motor comum que gira continuamente, o Servo Motor possui um circuito de feedback interno que monitora sua própria posição. Ele recebe um sinal de comando e se move precisamente até o ângulo desejado, mantendo essa posição com firmeza.",
         example: "Ideal para movimentar articulações de braços robóticos, direção de carrinhos r/c ou fazer movimentos de varredura com sensores.",
-        media: "" // Sem mídia: o site se ajusta dinamicamente ocultando a seção de mídia
+        media: ""
       }
     ];
+
+    // Chave criptografada SHA-256 para a nova senha: "pensamentocomputacional"
+    const ADMIN_HASH = "8be37b019b85db6fc694c9ec8d783e7401df499696c3bf04e9c704a29a009fb7";
   </script>
   <!-- ================================================================= -->
+
+  <!-- NOTIFICAÇÃO CUSTOMIZADA (Substituta de alerts nativos) -->
+  <div id="customToast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] transition-transform duration-300 ease-out max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 flex items-center gap-3">
+    <div id="toastIconBox" class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0">
+      <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+    </div>
+    <div>
+      <h4 id="toastTitle" class="font-bold text-slate-800 text-sm">Sucesso</h4>
+      <p id="toastMessage" class="text-xs text-slate-500">Mensagem do sistema.</p>
+    </div>
+  </div>
 
   <!-- CABEÇALHO DA PÁGINA -->
   <header class="bg-blue-600 text-white pt-16 pb-24 px-4 rounded-b-[3rem] shadow-xl relative overflow-hidden">
@@ -119,25 +133,21 @@
     </div>
   </header>
 
-  <!-- SEÇÃO DE CONTEÚDO PRINCIPAL (TELA INICIAL) -->
+  <!-- ======================== TELA INICIAL (FEED) ======================== -->
   <main id="homePage" class="max-w-6xl mx-auto px-4 -mt-10 pb-20 relative z-20">
     
-    <!-- MENU DE CATEGORIAS (Filtros Rápidos) -->
+    <!-- MENU DE CATEGORIAS -->
     <div class="flex gap-3 overflow-x-auto pb-4 mb-10 scrollbar-none justify-start md:justify-center">
       <button onclick="selectCategory('Todos')" id="catBtn-Todos" class="category-btn shrink-0 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-md border-2 border-transparent transition-all hover:scale-105">
         ⚡ Todos
       </button>
-      <div id="dynamicCategories" class="flex gap-3">
-        <!-- As categorias serão povoadas de forma dinâmica pelo JavaScript -->
-      </div>
+      <div id="dynamicCategories" class="flex gap-3"></div>
     </div>
 
     <!-- FEED DE CARDS -->
-    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      <!-- Cards renderizados dinamicamente -->
-    </div>
+    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
 
-    <!-- FEEDBACK DE BUSCA VAZIA -->
+    <!-- FEEDBACK VAZIO -->
     <div id="emptyState" class="hidden text-center py-20">
       <div class="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
         <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
@@ -147,99 +157,363 @@
     </div>
   </main>
 
-  <!-- VISUALIZAÇÃO DETALHADA DO VERBETE -->
+  <!-- ======================== DETALHES DO VERBETE ======================== -->
   <article id="detailPage" class="hidden max-w-4xl mx-auto px-4 -mt-10 pb-20 relative z-20">
-    <!-- Botão Flutuante de Voltar -->
     <button onclick="goHome()" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 rounded-2xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-lg border border-slate-100 mb-8 cursor-pointer group hover:-translate-y-0.5">
       <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Voltar à Enciclopédia
     </button>
 
-    <!-- Card de Conteúdo Principal -->
     <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-slate-100 relative overflow-hidden">
-      
-      <!-- Cabeçalho do Detalhe -->
       <div class="flex flex-col md:flex-row gap-8 items-start mb-8 relative z-10">
-        <!-- Ícone Redondo Gigante -->
         <div id="detailIconBox" class="w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-br text-white flex items-center justify-center shrink-0 shadow-lg text-5xl transform rotate-3 ring-8 ring-white">
           <i id="detailIcon" class="fa-solid fa-robot"></i>
         </div>
         
-        <!-- Textos Principais -->
         <div class="flex-1">
-          <span id="detailCategoryBadge" class="inline-block px-4 py-1.5 text-xs font-black rounded-xl uppercase tracking-wider border mb-4">
-            Categoria
-          </span>
-          <h2 id="detailTitle" class="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-3">
-            Título do Item
-          </h2>
-          <p id="detailShort" class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed">
-            Resumo curto explicando a função geral.
-          </p>
+          <span id="detailCategoryBadge" class="inline-block px-4 py-1.5 text-xs font-black rounded-xl uppercase tracking-wider border mb-4">Categoria</span>
+          <h2 id="detailTitle" class="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-3">Título</h2>
+          <p id="detailShort" class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed">Resumo curto.</p>
         </div>
       </div>
 
       <div class="w-full h-px bg-slate-100 my-8"></div>
 
-      <!-- Corpo da Postagem -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
-        
-        <!-- Bloco de Mídias (Imagem, GIF ou Vídeo) -->
-        <div id="mediaBox" class="lg:col-span-12 hidden">
-          <!-- O JS vai injetar a imagem ou o iframe do YouTube aqui -->
-        </div>
+        <div id="mediaBox" class="lg:col-span-12 hidden"></div>
 
         <div class="lg:col-span-12 space-y-8">
           <div>
             <h3 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
               <span class="w-2 h-6 bg-blue-600 rounded-full inline-block"></span> Como Funciona?
             </h3>
-            <p id="detailDescription" class="text-slate-600 text-lg leading-relaxed whitespace-pre-line">
-              Texto completo com as especificações técnicas, utilidade e funcionamento.
-            </p>
+            <p id="detailDescription" class="text-slate-600 text-lg leading-relaxed whitespace-pre-line"></p>
           </div>
 
           <div class="bg-slate-50 border border-slate-100 rounded-2.5xl p-6 md:p-8">
             <h3 class="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
               <i class="fa-solid fa-code text-blue-500"></i> Exemplo Prático de Uso
             </h3>
-            <p id="detailExample" class="text-slate-600 italic text-base md:text-lg leading-relaxed whitespace-pre-line">
-              Exemplo de bloco MakeCode ou lógica aplicada em sala de aula.
-            </p>
+            <p id="detailExample" class="text-slate-600 italic text-base md:text-lg leading-relaxed whitespace-pre-line"></p>
           </div>
         </div>
       </div>
 
-      <!-- Ícone Sutil de Decoração de Fundo no Card -->
       <div class="absolute bottom-0 right-0 w-full h-full overflow-hidden opacity-[0.02] pointer-events-none">
         <i class="fa-solid fa-book-open text-[30rem] absolute -bottom-24 -right-24 transform -rotate-12"></i>
       </div>
     </div>
   </article>
 
+  <!-- ======================== TELA DE LOGIN ADMIN ======================== -->
+  <section id="loginPage" class="hidden max-w-md mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <div class="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 text-center">
+      <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <i class="fa-solid fa-lock text-3xl"></i>
+      </div>
+      <h2 class="text-3xl font-black text-slate-800 mb-2">Painel de Controle</h2>
+      <p class="text-slate-500 mb-6 text-sm">Digite a senha de administrador para gerenciar seus verbetes.</p>
+      
+      <div class="space-y-4 text-left">
+        <div>
+          <label class="block text-slate-700 text-sm font-bold mb-2">Senha do Administrador</label>
+          <input type="password" id="adminPasswordInput" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 font-medium" placeholder="Digite a senha...">
+        </div>
+        <button onclick="attemptLogin()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
+          Acessar Painel <i class="fa-solid fa-arrow-right ml-2"></i>
+        </button>
+        <button onclick="goHome()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all cursor-pointer text-sm">
+          Voltar para Home
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== PAINEL ADMINISTRATIVO ======================== -->
+  <section id="adminPage" class="hidden max-w-5xl mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 class="text-4xl font-black text-slate-800">Área do Administrador</h2>
+        <p class="text-slate-500">Adicione, edite ou remova verbetes da sua Robopédia.</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="logout()" class="px-5 py-3 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-2xl font-bold transition-all text-sm cursor-pointer">
+          Sair Painel <i class="fa-solid fa-sign-out-alt ml-1"></i>
+        </button>
+        <button onclick="goHome()" class="px-5 py-3 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-2xl font-bold transition-all text-sm cursor-pointer">
+          Ver Site <i class="fa-solid fa-eye ml-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Formulário de Cadastro -->
+      <div class="lg:col-span-7 bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+        <h3 class="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+          <i class="fa-solid fa-square-plus text-blue-500"></i> Criar Novo Verbete
+        </h3>
+        
+        <form id="verbeteForm" onsubmit="addVerbete(event)" class="space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">Título do Verbete</label>
+              <input type="text" id="formTitle" required oninput="autoGenerateId()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor de Toque">
+            </div>
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">ID Único (Auto-gerado)</label>
+              <input type="text" id="formId" required class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 focus:outline-none cursor-not-allowed" readonly placeholder="Ex: sensor-de-toque">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">Categoria</label>
+              <div class="flex gap-2">
+                <select id="formCategory" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                  <option value="Sensores">Sensores</option>
+                  <option value="Atuadores">Atuadores</option>
+                  <option value="Displays">Displays</option>
+                  <option value="MakeCode">MakeCode</option>
+                  <option value="Placas">Placas</option>
+                </select>
+                <button type="button" onclick="addNewCategoryPrompt()" class="px-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors">
+                  + Nova
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">Ícone (FontAwesome)</label>
+              <div class="flex gap-2">
+                <select id="formIcon" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                  <option value="fa-solid fa-gear">⚙️ Engrenagem (Motor)</option>
+                  <option value="fa-solid fa-wave-square">〰️ Sensor de Onda</option>
+                  <option value="fa-solid fa-lightbulb">💡 Lâmpada (LED)</option>
+                  <option value="fa-solid fa-compass">🧭 Bússola/Servo</option>
+                  <option value="fa-solid fa-microchip">🔌 Chip/Placa</option>
+                  <option value="fa-solid fa-gamepad">🎮 Controle</option>
+                  <option value="fa-solid fa-volume-high">🔊 Som</option>
+                </select>
+                <input type="text" id="formIconCustom" placeholder="fa-solid fa-xxx" class="w-24 px-3 py-3 rounded-xl border border-slate-200 text-xs focus:outline-none" title="Coloque uma classe FontAwesome customizada aqui se desejar">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Estilo visual / Cor do Card</label>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" value="blue" checked class="accent-blue-600">
+                <span class="w-4 h-4 rounded-full bg-blue-500"></span>
+                <span class="text-[10px] text-slate-500">Azul</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" value="emerald" class="accent-emerald-600">
+                <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
+                <span class="text-[10px] text-slate-500">Verde</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" value="orange" class="accent-orange-600">
+                <span class="w-4 h-4 rounded-full bg-orange-500"></span>
+                <span class="text-[10px] text-slate-500">Laranja</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" value="purple" class="accent-purple-600">
+                <span class="w-4 h-4 rounded-full bg-purple-500"></span>
+                <span class="text-[10px] text-slate-500">Roxo</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" value="rose" class="accent-rose-600">
+                <span class="w-4 h-4 rounded-full bg-rose-500"></span>
+                <span class="text-[10px] text-slate-500">Rosa</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" value="cyan" class="accent-cyan-600">
+                <span class="w-4 h-4 rounded-full bg-cyan-500"></span>
+                <span class="text-[10px] text-slate-500">Ciano</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Resumo Curto (Aparece no Card)</label>
+            <input type="text" id="formShort" required maxlength="120" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor que detecta pressões físicas rápidas.">
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Link da Mídia (Vídeo YouTube ou URL Imagem/GIF)</label>
+            <input type="url" id="formMedia" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: https://www.youtube.com/embed/S_B78Gq8oQk ou https://site.com/imagem.gif">
+            <span class="text-[10px] text-slate-400 mt-1 block">Deixe em branco se não houver mídia. Vídeos de YouTube precisam ter o formato embed (ex: https://www.youtube.com/embed/ID_DO_VIDEO).</span>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">O que é? Como funciona? (Descrição Completa)</label>
+            <textarea id="formDescription" required rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Digite uma explicação detalhada sobre o funcionamento e utilidade prática..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Exemplo Prático</label>
+            <textarea id="formExample" required rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Como programar ou utilizar esse item na prática?"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
+            <i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista
+          </button>
+        </form>
+      </div>
+
+      <!-- Barra Lateral Administrativa -->
+      <div class="lg:col-span-5 space-y-8">
+        
+        <!-- Bloco de Sincronização do GitHub -->
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[2.5rem] p-8 shadow-xl">
+          <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
+            <i class="fa-brands fa-github text-2xl"></i>
+          </div>
+          <h3 class="text-2xl font-black mb-2">Salvar alterações no GitHub</h3>
+          <p class="text-blue-100 text-sm mb-6 leading-relaxed">
+            Como o GitHub é estático, clique no botão abaixo para baixar o seu site totalmente atualizado. Depois, basta fazer o upload desse arquivo na interface do seu GitHub!
+          </p>
+          <button onclick="downloadUpdatedHTML()" class="w-full py-4 bg-white text-indigo-700 hover:bg-slate-50 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-arrow-down text-lg"></i> Baixar index.html Atualizado
+          </button>
+        </div>
+
+        <!-- Lista de Verbetes e Exclusão -->
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+          <h3 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-blue-500"></i> Verbetes Cadastrados (<span id="adminListCount">0</span>)
+          </h3>
+          <div id="adminVerbetesList" class="space-y-3 max-h-[350px] overflow-y-auto pr-2 scrollbar-none">
+            <!-- Gerado via Javascript -->
+          </div>
+        </div>
+
+        <!-- Gerador de Nova Senha -->
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+          <h3 class="text-base font-extrabold text-slate-800 mb-2">🔑 Deseja alterar sua senha?</h3>
+          <p class="text-xs text-slate-500 mb-4">Insira sua nova senha para gerar o código hash criptografado para o seu código-fonte.</p>
+          <div class="space-y-3">
+            <input type="text" id="newPassString" placeholder="Nova senha aqui..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none">
+            <button onclick="generateCustomHash()" class="w-full py-2 bg-slate-800 hover:bg-slate-950 text-white rounded-lg text-xs font-bold transition-all">
+              Gerar Código Criptografado
+            </button>
+            <div id="newHashResult" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-mono break-all text-slate-600">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- RODAPÉ -->
   <footer class="bg-slate-900 text-slate-400 py-12 text-center border-t border-slate-800">
     <div class="max-w-4xl mx-auto px-4">
       <p class="text-sm mb-2">&copy; 2026 Robopédia. Criado com ❤️ para professores e estudantes de robótica.</p>
-      <p class="text-xs text-slate-600">Hospedado gratuitamente no GitHub Pages</p>
+      <p class="text-xs text-slate-600">Acesse a área administrativa digitando #admin no final da URL.</p>
     </div>
   </footer>
 
-  <!-- LÓGICA DE PROGRAMAÇÃO DA ENCICLOPÉDIA -->
+  <!-- LÓGICA DE PROGRAMAÇÃO -->
   <script>
     let activeCategory = "Todos";
     let searchQuery = "";
+    
+    // Configurações de Paletas de Cores de acordo com as opções do Admin
+    const colorPalettes = {
+      blue: { color: "from-blue-500 to-indigo-500", badgeBg: "bg-blue-50 text-blue-700 border-blue-200" },
+      emerald: { color: "from-emerald-500 to-teal-500", badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+      orange: { color: "from-orange-500 to-amber-500", badgeBg: "bg-orange-50 text-orange-700 border-orange-200" },
+      purple: { color: "from-purple-500 to-pink-500", badgeBg: "bg-purple-50 text-purple-700 border-purple-200" },
+      rose: { color: "from-rose-500 to-red-500", badgeBg: "bg-rose-50 text-rose-700 border-rose-200" },
+      cyan: { color: "from-cyan-500 to-blue-500", badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200" }
+    };
 
-    // Inicialização da Página
+    // Inicialização do roteador e do feed
     window.onload = function() {
+      handleRouting();
       generateCategoriesMenu();
       renderFeed();
     };
 
-    // Gera o menu de filtros baseado nas categorias que existem no banco de dados
+    // Monitora as alterações de rota/hash no navegador
+    window.onhashchange = function() {
+      handleRouting();
+    };
+
+    function handleRouting() {
+      const hash = window.location.hash;
+      
+      // Oculta todas as telas primárias por padrão
+      document.getElementById("homePage").classList.add("hidden");
+      document.getElementById("detailPage").classList.add("hidden");
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("adminPage").classList.add("hidden");
+      
+      // Controla visibilidade de busca global
+      document.getElementById("searchBarContainer").classList.add("invisible");
+
+      if (hash === "#admin") {
+        const isAdminLogged = sessionStorage.getItem("robopedia_admin") === "true";
+        if (isAdminLogged) {
+          showAdminPanel();
+        } else {
+          document.getElementById("loginPage").classList.remove("hidden");
+        }
+      } else if (hash.startsWith("#item-")) {
+        const itemId = hash.replace("#item-", "");
+        openDetailPage(itemId);
+      } else {
+        // Rota inicial (Home)
+        document.getElementById("homePage").classList.remove("hidden");
+        document.getElementById("searchBarContainer").classList.remove("invisible");
+      }
+    }
+
+    // Função de Criptografia SHA-256 leve para rodar no navegador
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Executa a tentativa de login do admin
+    async function attemptLogin() {
+      const inputPass = document.getElementById("adminPasswordInput").value;
+      const hashedInput = await sha256(inputPass);
+
+      if (hashedInput === ADMIN_HASH) {
+        sessionStorage.setItem("robopedia_admin", "true");
+        document.getElementById("adminPasswordInput").value = "";
+        showCustomNotice("Acesso permitido! Bem-vindo.", "success");
+        showAdminPanel();
+      } else {
+        showCustomNotice("Senha incorreta! Tente novamente.", "error");
+      }
+    }
+
+    // Exibe o painel administrativo
+    function showAdminPanel() {
+      window.location.hash = "#admin";
+      document.getElementById("homePage").classList.add("hidden");
+      document.getElementById("detailPage").classList.add("hidden");
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("adminPage").classList.remove("hidden");
+      document.getElementById("searchBarContainer").classList.add("invisible");
+      
+      updateAdminCategoriesSelect();
+      renderAdminVerbetesList();
+    }
+
+    function logout() {
+      sessionStorage.removeItem("robopedia_admin");
+      showCustomNotice("Sessão administrativa encerrada.", "success");
+      goHome();
+    }
+
+    // Gera de forma dinâmica o menu de categorias na Home
     function generateCategoriesMenu() {
       const catContainer = document.getElementById("dynamicCategories");
-      
-      // Obtém categorias únicas do banco de dados
       const categories = [...new Set(database.map(item => item.category))];
       
       catContainer.innerHTML = "";
@@ -253,11 +527,148 @@
       });
     }
 
-    // Gerencia o clique no menu de categorias
+    // Atualiza opções do select de categorias no cadastro
+    function updateAdminCategoriesSelect() {
+      const select = document.getElementById("formCategory");
+      const currentCategoryValue = select.value;
+      const categories = [...new Set(database.map(item => item.category))];
+      
+      select.innerHTML = "";
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+
+      // Restaura o valor se ele existir na lista
+      if (categories.includes(currentCategoryValue)) {
+        select.value = currentCategoryValue;
+      }
+    }
+
+    // Adiciona uma categoria nova ao banco via input simples
+    function addNewCategoryPrompt() {
+      const newCatName = prompt("Digite o nome da nova categoria de robótica:");
+      if (newCatName && newCatName.trim() !== "") {
+        const select = document.getElementById("formCategory");
+        const formattedCat = newCatName.trim();
+        
+        const opt = document.createElement("option");
+        opt.value = formattedCat;
+        opt.textContent = formattedCat;
+        select.appendChild(opt);
+        select.value = formattedCat;
+        showCustomNotice(`Categoria "${formattedCat}" adicionada à lista temporária.`, "success");
+      }
+    }
+
+    // Monitoramento do input do título do form para automatizar a criação do ID do elemento
+    function autoGenerateId() {
+      const titleVal = document.getElementById("formTitle").value;
+      const cleanId = titleVal
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentuações
+        .replace(/[^a-z0-9\s-]/g, "")   // Remove caracteres especiais
+        .replace(/\s+/g, "-")          // Troca espaços por hífens
+        .replace(/-+/g, "-");          // Evita hífens duplos
+      document.getElementById("formId").value = cleanId;
+    }
+
+    // Salva o novo verbete na base de dados em memória
+    function addVerbete(e) {
+      e.preventDefault();
+      
+      const newId = document.getElementById("formId").value;
+      
+      // Verifica se o ID já existe
+      if (database.some(x => x.id === newId)) {
+        showCustomNotice("Já existe um verbete cadastrado com este nome!", "error");
+        return;
+      }
+
+      // Captura a paleta de cor selecionada
+      const colorSelected = document.querySelector('input[name="colorOption"]:checked').value;
+      const palette = colorPalettes[colorSelected];
+
+      // Se houver ícone customizado no campo, prefere ele
+      const customIcon = document.getElementById("formIconCustom").value.trim();
+      const finalIcon = customIcon !== "" ? customIcon : document.getElementById("formIcon").value;
+
+      const newVerbete = {
+        id: newId,
+        category: document.getElementById("formCategory").value,
+        icon: finalIcon,
+        color: palette.color,
+        badgeBg: palette.badgeBg,
+        title: document.getElementById("formTitle").value.trim(),
+        short: document.getElementById("formShort").value.trim(),
+        description: document.getElementById("formDescription").value.trim(),
+        example: document.getElementById("formExample").value.trim(),
+        media: document.getElementById("formMedia").value.trim()
+      };
+
+      // Adiciona ao banco local temporário
+      database.push(newVerbete);
+
+      // Atualiza visualizações administrativas e normais
+      document.getElementById("verbeteForm").reset();
+      document.getElementById("formIconCustom").value = "";
+      autoGenerateId();
+
+      generateCategoriesMenu();
+      renderFeed();
+      renderAdminVerbetesList();
+      showCustomNotice("Verbete adicionado com sucesso!", "success");
+    }
+
+    // Renderiza a lista de exclusão rápida de verbetes no painel
+    function renderAdminVerbetesList() {
+      const listContainer = document.getElementById("adminVerbetesList");
+      document.getElementById("adminListCount").textContent = database.length;
+      listContainer.innerHTML = "";
+
+      database.forEach(item => {
+        const itemRow = document.createElement("div");
+        itemRow.className = "flex items-center justify-between bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-100 transition-colors";
+        
+        itemRow.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 text-sm">
+              <i class="${item.icon}"></i>
+            </span>
+            <div>
+              <p class="font-bold text-slate-800 text-sm leading-tight">${item.title}</p>
+              <p class="text-[10px] text-slate-400">${item.category}</p>
+            </div>
+          </div>
+          <button onclick="deleteVerbete('${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-colors cursor-pointer" title="Remover este verbete">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        `;
+        listContainer.appendChild(itemRow);
+      });
+    }
+
+    // Deleta um verbete
+    function deleteVerbete(id) {
+      const confirmRemove = confirm("Tem certeza que deseja excluir permanentemente este verbete?");
+      if (!confirmRemove) return;
+
+      const idx = database.findIndex(x => x.id === id);
+      if (idx !== -1) {
+        database.splice(idx, 1);
+        generateCategoriesMenu();
+        renderFeed();
+        renderAdminVerbetesList();
+        showCustomNotice("Verbete removido!", "success");
+      }
+    }
+
+    // Filtra categorias pela home
     function selectCategory(category) {
       activeCategory = category;
-      
-      // Atualiza estilo visual dos botões
       document.querySelectorAll(".category-btn").forEach(btn => {
         btn.classList.remove("bg-blue-600", "text-white", "shadow-md");
         btn.classList.add("bg-white", "text-slate-600", "shadow-sm", "hover:bg-slate-100");
@@ -307,7 +718,9 @@
       filteredItems.forEach(item => {
         const card = document.createElement("div");
         card.className = "group flex flex-col bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-100 relative cursor-pointer h-full";
-        card.onclick = () => openDetailPage(item.id);
+        card.onclick = () => {
+          window.location.hash = `#item-${item.id}`;
+        };
 
         card.innerHTML = `
           <!-- Categoria Badge -->
@@ -328,7 +741,7 @@
             ${item.short}
           </p>
           
-          <!-- Botão Conhecer Mais (Fundo do Card) -->
+          <!-- Botão Conhecer Mais -->
           <span class="mt-auto inline-flex items-center gap-1.5 text-blue-600 font-extrabold text-sm hover:text-blue-800">
             Conhecer <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
           </span>
@@ -340,7 +753,10 @@
     // Abre a visualização de detalhes de um item específico
     function openDetailPage(id) {
       const item = database.find(x => x.id === id);
-      if (!item) return;
+      if (!item) {
+        goHome();
+        return;
+      }
 
       // Configura Ícone, Cores e Badges
       const iconBox = document.getElementById("detailIconBox");
@@ -357,7 +773,7 @@
       document.getElementById("detailDescription").textContent = item.description;
       document.getElementById("detailExample").textContent = item.example;
 
-      // Trata as Mídias (Vídeo, Imagem ou GIF)
+      // Trata as Mídias
       const mediaBox = document.getElementById("mediaBox");
       mediaBox.innerHTML = "";
       
@@ -365,7 +781,7 @@
         mediaBox.classList.remove("hidden");
         
         if (item.media.includes("youtube.com") || item.media.includes("youtu.be")) {
-          // É um vídeo do YouTube
+          // Vídeo do YouTube
           mediaBox.innerHTML = `
             <div class="video-responsive shadow-lg mb-4">
               <iframe src="${item.media}" title="Demonstração do Componente" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -385,15 +801,84 @@
       document.getElementById("homePage").classList.add("hidden");
       document.getElementById("searchBarContainer").classList.add("invisible");
       document.getElementById("detailPage").classList.remove("hidden");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // Retorna para a tela de lista de verbetes
     function goHome() {
-      document.getElementById("detailPage").classList.add("hidden");
-      document.getElementById("homePage").classList.remove("hidden");
-      document.getElementById("searchBarContainer").classList.remove("invisible");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.location.hash = "";
+      handleRouting();
+    }
+
+    // Exibe notificação personalizada elegante
+    function showCustomNotice(message, type = "success") {
+      const toast = document.getElementById("customToast");
+      const iconBox = document.getElementById("toastIconBox");
+      const icon = document.getElementById("toastIcon");
+      const title = document.getElementById("toastTitle");
+      const text = document.getElementById("toastMessage");
+
+      text.textContent = message;
+
+      if (type === "success") {
+        iconBox.className = "w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500 text-white shrink-0 shadow-lg shadow-emerald-200";
+        icon.className = "fa-solid fa-circle-check";
+        title.textContent = "Sucesso";
+      } else {
+        iconBox.className = "w-10 h-10 rounded-xl flex items-center justify-center bg-rose-500 text-white shrink-0 shadow-lg shadow-rose-200";
+        icon.className = "fa-solid fa-circle-xmark";
+        title.textContent = "Atenção";
+      }
+
+      // Anima entrada
+      toast.classList.remove("translate-y-[-150%]");
+      toast.classList.add("translate-y-0");
+
+      setTimeout(() => {
+        // Anima saída
+        toast.classList.remove("translate-y-0");
+        toast.classList.add("translate-y-[-150%]");
+      }, 3500);
+    }
+
+    // Função para auxiliar os usuários que desejam trocar sua senha estática
+    async function generateCustomHash() {
+      const passString = document.getElementById("newPassString").value.trim();
+      if (passString === "") {
+        showCustomNotice("Digite uma senha no campo antes de clicar!", "error");
+        return;
+      }
+      const outputHash = await sha256(passString);
+      const outputBox = document.getElementById("newHashResult");
+      outputBox.innerHTML = `<strong>Senha:</strong> ${passString}<br><strong>Hash Gerado:</strong><br><span class="text-indigo-600">${outputHash}</span><br><br><span class="text-[9px]">Copie o hash em azul acima e substitua a variável <strong>ADMIN_HASH</strong> no código do seu index.html!</span>`;
+      outputBox.classList.remove("hidden");
+    }
+
+    // FUNÇÃO MASTER: Reconstrói dinamicamente o arquivo index.html completo e o descarrega no navegador
+    function downloadUpdatedHTML() {
+      // Cria a representação textual e higienizada do banco de dados local
+      const stringifiedDB = JSON.stringify(database, null, 2);
+
+      // Busca o template HTML completo desta página
+      let sourceCode = document.documentElement.outerHTML;
+
+      // Localiza o bloco de banco de dados no script original e substitui pelo novo
+      const dbSearchRegex = /const database = \[\s*[\s\S]*?\s*\];/;
+      const newDBCode = `const database = ${stringifiedDB};`;
+      
+      sourceCode = sourceCode.replace(dbSearchRegex, newDBCode);
+
+      // Cria um Blob e dispara o download automático pelo navegador
+      const fileBlob = new Blob(["<!DOCTYPE html>\n" + sourceCode], { type: "text/html;charset=utf-8" });
+      const downloadLink = document.createElement("a");
+      
+      downloadLink.href = URL.createObjectURL(fileBlob);
+      downloadLink.download = "index.html";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      showCustomNotice("Arquivo index.html baixado! Suba-o para o GitHub para atualizar.", "success");
     }
   </script>
 </body>
