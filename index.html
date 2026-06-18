@@ -9,6 +9,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome para Ícones Incríveis -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CryptoJS para Criptografia Fiável da Senha -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   
   <style>
     /* Esconde a barra de rolagem mas mantém a rolagem funcional (útil para o menu de categorias no celular) */
@@ -39,7 +41,7 @@
   <!-- ⚙️ BANCO DE DADOS DOS VERBETES                                    -->
   <!-- ================================================================= -->
   <script>
-    // Se você baixar o arquivo atualizado pelo painel admin, ele substituirá esta lista automaticamente!
+    // Se baixar o arquivo atualizado pelo painel admin, ele substituirá esta lista automaticamente!
     const database = [
       {
         id: "motor-dc",
@@ -114,7 +116,7 @@
         <a href="#" onclick="goHome(); return false;" class="hover:opacity-90 transition-opacity">🤖 Robopédia</a>
       </h1>
       <p class="text-blue-100 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-8">
-        Guia dinâmico e enciclopédia de componentes para seus projetos de robótica.
+        Guia dinâmico e enciclopédia de componentes para os seus projetos de robótica.
       </p>
 
       <!-- BARRA DE PESQUISA (Apenas na Home) -->
@@ -122,7 +124,7 @@
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
           <i class="fa-solid fa-magnifying-glass text-lg"></i>
         </div>
-        <input type="text" id="searchInput" oninput="filterDatabase()" placeholder="Buscar sensor, atuador, comando..." class="w-full pl-12 pr-4 py-4 rounded-2xl bg-white text-slate-800 placeholder-slate-400 border-none shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium transition-all text-base md:text-lg">
+        <input type="text" id="searchInput" oninput="filterDatabase()" placeholder="Procurar sensor, atuador, comando..." class="w-full pl-12 pr-4 py-4 rounded-2xl bg-white text-slate-800 placeholder-slate-400 border-none shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium transition-all text-base md:text-lg">
       </div>
     </div>
     
@@ -153,7 +155,7 @@
         <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
       </div>
       <h3 class="text-2xl font-bold text-slate-700 mb-2">Nenhum verbete encontrado</h3>
-      <p class="text-slate-500">Tente buscar por termos diferentes ou selecione outra categoria.</p>
+      <p class="text-slate-500">Tente procurar por termos diferentes ou selecione outra categoria.</p>
     </div>
   </main>
 
@@ -210,8 +212,8 @@
       <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
         <i class="fa-solid fa-lock text-3xl"></i>
       </div>
-      <h2 class="text-3xl font-black text-slate-800 mb-2">Painel de Controle</h2>
-      <p class="text-slate-500 mb-6 text-sm">Digite a senha de administrador para gerenciar seus verbetes.</p>
+      <h2 class="text-3xl font-black text-slate-800 mb-2">Painel de Controlo</h2>
+      <p class="text-slate-500 mb-6 text-sm">Digite a senha de administrador para gerir os seus verbetes.</p>
       
       <div class="space-y-4 text-left">
         <div>
@@ -219,10 +221,10 @@
           <input type="password" id="adminPasswordInput" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100 font-medium" placeholder="Digite a senha...">
         </div>
         <button onclick="attemptLogin()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
-          Acessar Painel <i class="fa-solid fa-arrow-right ml-2"></i>
+          Aceder ao Painel <i class="fa-solid fa-arrow-right ml-2"></i>
         </button>
         <button onclick="goHome()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all cursor-pointer text-sm">
-          Voltar para Home
+          Voltar à Home
         </button>
       </div>
     </div>
@@ -237,7 +239,7 @@
       </div>
       <div class="flex gap-3">
         <button onclick="logout()" class="px-5 py-3 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-2xl font-bold transition-all text-sm cursor-pointer">
-          Sair Painel <i class="fa-solid fa-sign-out-alt ml-1"></i>
+          Sair do Painel <i class="fa-solid fa-sign-out-alt ml-1"></i>
         </button>
         <button onclick="goHome()" class="px-5 py-3 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-2xl font-bold transition-all text-sm cursor-pointer">
           Ver Site <i class="fa-solid fa-eye ml-1"></i>
@@ -335,23 +337,23 @@
 
           <div>
             <label class="block text-slate-700 text-sm font-bold mb-2">Resumo Curto (Aparece no Card)</label>
-            <input type="text" id="formShort" required maxlength="120" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor que detecta pressões físicas rápidas.">
+            <input type="text" id="formShort" required maxlength="120" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor que deteta pressões físicas rápidas.">
           </div>
 
           <div>
-            <label class="block text-slate-700 text-sm font-bold mb-2">Link da Mídia (Vídeo YouTube ou URL Imagem/GIF)</label>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Link da Mídia (Vídeo YouTube ou URL de Imagem/GIF)</label>
             <input type="url" id="formMedia" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: https://www.youtube.com/embed/S_B78Gq8oQk ou https://site.com/imagem.gif">
-            <span class="text-[10px] text-slate-400 mt-1 block">Deixe em branco se não houver mídia. Vídeos de YouTube precisam ter o formato embed (ex: https://www.youtube.com/embed/ID_DO_VIDEO).</span>
+            <span class="text-[10px] text-slate-400 mt-1 block">Deixe em branco se não houver mídia. Vídeos do YouTube precisam de ter o formato embed (ex: https://www.youtube.com/embed/ID_DO_VIDEO).</span>
           </div>
 
           <div>
             <label class="block text-slate-700 text-sm font-bold mb-2">O que é? Como funciona? (Descrição Completa)</label>
-            <textarea id="formDescription" required rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Digite uma explicação detalhada sobre o funcionamento e utilidade prática..."></textarea>
+            <textarea id="formDescription" required rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Digite uma explicação detalhada sobre o funcionamento e a utilidade prática..."></textarea>
           </div>
 
           <div>
             <label class="block text-slate-700 text-sm font-bold mb-2">Exemplo Prático</label>
-            <textarea id="formExample" required rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Como programar ou utilizar esse item na prática?"></textarea>
+            <textarea id="formExample" required rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Como programar ou utilizar este item na prática?"></textarea>
           </div>
 
           <div class="flex gap-3">
@@ -375,10 +377,10 @@
           </div>
           <h3 class="text-2xl font-black mb-2">Salvar alterações no GitHub</h3>
           <p class="text-blue-100 text-sm mb-6 leading-relaxed">
-            Como o GitHub é estático, clique no botão abaixo para baixar o seu site totalmente atualizado. Depois, basta fazer o upload desse arquivo na interface do seu GitHub!
+            Como o GitHub é estático, clique no botão abaixo para descarregar o seu site totalmente atualizado. Depois, basta fazer o upload deste ficheiro na interface do seu GitHub!
           </p>
           <button onclick="downloadUpdatedHTML()" class="w-full py-4 bg-white text-indigo-700 hover:bg-slate-50 rounded-xl font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2">
-            <i class="fa-solid fa-file-arrow-down text-lg"></i> Baixar index.html Atualizado
+            <i class="fa-solid fa-file-arrow-down text-lg"></i> Descarregar index.html Atualizado
           </button>
         </div>
 
@@ -394,8 +396,8 @@
 
         <!-- Gerador de Nova Senha -->
         <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
-          <h3 class="text-base font-extrabold text-slate-800 mb-2">🔑 Deseja alterar sua senha?</h3>
-          <p class="text-xs text-slate-500 mb-4">Insira sua nova senha para gerar o código hash criptografado para o seu código-fonte.</p>
+          <h3 class="text-base font-extrabold text-slate-800 mb-2">🔑 Deseja alterar a sua senha?</h3>
+          <p class="text-xs text-slate-500 mb-4">Insira a sua nova senha para gerar o código hash criptografado para o seu código-fonte.</p>
           <div class="space-y-3">
             <input type="text" id="newPassString" placeholder="Nova senha aqui..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none">
             <button onclick="generateCustomHash()" class="w-full py-2 bg-slate-800 hover:bg-slate-950 text-white rounded-lg text-xs font-bold transition-all">
@@ -414,7 +416,7 @@
   <footer class="bg-slate-900 text-slate-400 py-12 text-center border-t border-slate-800">
     <div class="max-w-4xl mx-auto px-4">
       <p class="text-sm mb-2">&copy; 2026 Robopédia. Criado com ❤️ para professores e estudantes de robótica.</p>
-      <p class="text-xs text-slate-600">Acesse a área administrativa digitando #admin no final da URL.</p>
+      <p class="text-xs text-slate-600">Aceda à área administrativa digitando #admin no final da URL.</p>
     </div>
   </footer>
 
@@ -422,7 +424,7 @@
   <script>
     let activeCategory = "Todos";
     let searchQuery = "";
-    let editingId = null; // ID do verbete que está sendo editado no momento
+    let editingId = null; // ID do verbete que está a ser editado no momento
     
     // Configurações de Paletas de Cores de acordo com as opções do Admin
     const colorPalettes = {
@@ -441,7 +443,7 @@
       renderFeed();
     };
 
-    // Monitora as alterações de rota/hash no navegador
+    // Monitoriza as alterações de rota/hash no navegador
     window.onhashchange = function() {
       handleRouting();
     };
@@ -449,13 +451,13 @@
     function handleRouting() {
       const hash = window.location.hash;
       
-      // Oculta todas as telas primárias por padrão
+      // Oculta todas as telas primárias por defeito
       document.getElementById("homePage").classList.add("hidden");
       document.getElementById("detailPage").classList.add("hidden");
       document.getElementById("loginPage").classList.add("hidden");
       document.getElementById("adminPage").classList.add("hidden");
       
-      // Controla visibilidade de busca global
+      // Controla a visibilidade da pesquisa global
       document.getElementById("searchBarContainer").classList.add("invisible");
 
       if (hash === "#admin") {
@@ -475,95 +477,11 @@
       }
     }
 
-    // Algoritmo de SHA-256 leve e síncrono em JS puro (não depende de criptografia do navegador nem de conexão HTTPS segura)
-    function sha256(ascii) {
-      function rotateRight(n, x) {
-        return (n >>> x) | (n << (32 - x));
-      }
-      const k = [
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-      ];
-      let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a,
-          h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
-
-      let msg = ascii;
-      let l = msg.length;
-      let words = [];
-      for (let i = 0; i < l; i++) {
-        words[i >> 2] |= (msg.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
-      }
-      words[l >> 2] |= 0x80 << (24 - (l % 4) * 8);
-      
-      let blocksCount = ((l + 8) >> 6) + 1;
-      let wordsCount = blocksCount * 16;
-      while (words.length < wordsCount) {
-        words.push(0);
-      }
-      words[wordsCount - 1] = l * 8;
-
-      for (let i = 0; i < wordsCount; i += 16) {
-        let w = [];
-        for (let j = 0; j < 16; j++) {
-          w[j] = words[i + j];
-        }
-        for (let j = 16; j < 64; j++) {
-          let s0 = rotateRight(w[j - 15], 7) ^ rotateRight(w[j - 15], 18) ^ (w[j - 15] >>> 3);
-          let s1 = rotateRight(w[j - 2], 17) ^ rotateRight(w[j - 2], 19) ^ (w[j - 2] >>> 10);
-          w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
-        }
-
-        let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
-
-        for (let j = 0; j < 64; j++) {
-          let S1 = rotateRight(e, 6) ^ rotateRight(e, 11) ^ rotateRight(e, 25);
-          let ch = (e & f) ^ ((~e) & g);
-          let temp1 = (h + S1 + ch + k[j] + w[j]) | 0;
-          let S0 = rotateRight(a, 2) ^ rotateRight(a, 13) ^ rotateRight(a, 22);
-          let maj = (a & b) ^ (a & c) ^ (b & c);
-          let temp2 = (S0 + maj) | 0;
-
-          h = g;
-          g = f;
-          f = e;
-          e = (d + temp1) | 0;
-          d = c;
-          c = b;
-          b = a;
-          a = (temp1 + temp2) | 0;
-        }
-
-        h0 = (h0 + a) | 0;
-        h1 = (h1 + b) | 0;
-        h2 = (h2 + c) | 0;
-        h3 = (h3 + d) | 0;
-        h4 = (h4 + e) | 0;
-        h5 = (h5 + f) | 0;
-        h6 = (h6 + g) | 0;
-        h7 = (h7 + h) | 0;
-      }
-
-      function hex(n) {
-        let s = "", v;
-        for (let j = 7; j >= 0; j--) {
-          v = (n >>> (j * 4)) & 0xf;
-          s += v.toString(16);
-        }
-        return s;
-      }
-      return hex(h0) + hex(h1) + hex(h2) + hex(h3) + hex(h4) + hex(h5) + hex(h6) + hex(h7);
-    }
-
-    // Executa a tentativa de login do admin (limpa espaços e normaliza em minúsculas)
+    // Executa a tentativa de login do admin utilizando a biblioteca externa fiável (CryptoJS)
     function attemptLogin() {
       const inputPass = document.getElementById("adminPasswordInput").value.trim().toLowerCase();
-      const hashedInput = sha256(inputPass);
+      // CryptoJS garante a encriptação exata e síncrona em qualquer ambiente web
+      const hashedInput = CryptoJS.SHA256(inputPass).toString();
 
       if (hashedInput === ADMIN_HASH) {
         sessionStorage.setItem("robopedia_admin", "true");
@@ -646,9 +564,9 @@
       }
     }
 
-    // Monitoramento do input do título do form para automatizar a criação do ID do elemento
+    // Monitorização do input do título do form para automatizar a criação do ID do elemento
     function autoGenerateId() {
-      if (editingId !== null) return; // Não gera novo ID se estiver editando um existente
+      if (editingId !== null) return; // Não gera novo ID se estiver a editar um existente
       
       const titleVal = document.getElementById("formTitle").value;
       const cleanId = titleVal
@@ -656,8 +574,8 @@
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") // Remove acentuações
         .replace(/[^a-z0-9\s-]/g, "")   // Remove caracteres especiais
-        .replace(/\s+/g, "-")          // Troca espaços por hífens
-        .replace(/-+/g, "-");          // Evita hífens duplos
+        .replace(/\s+/g, "-")          // Troca espaços por hifens
+        .replace(/-+/g, "-");          // Evita hifens duplos
       document.getElementById("formId").value = cleanId;
     }
 
@@ -671,7 +589,7 @@
       // Altera títulos e botões do formulário
       document.getElementById("formSectionTitle").innerHTML = `<i class="fa-solid fa-pencil text-amber-500"></i> Editar Verbete: ${item.title}`;
       document.getElementById("formSubmitBtn").className = "flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer";
-      document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Salvar Alterações`;
+      document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Alterações`;
       document.getElementById("cancelEditBtn").classList.remove("hidden");
 
       // Preenche os campos do formulário
@@ -698,7 +616,7 @@
         document.getElementById("formIconCustom").value = item.icon;
       }
 
-      // Procura qual cor combina com a classe de gradiente para marcar o rádio
+      // Procura qual cor combina com a classe de gradiente para marcar o botão rádio
       let detectedColor = "blue";
       for (const [key, val] of Object.entries(colorPalettes)) {
         if (item.color === val.color) {
@@ -724,7 +642,7 @@
     function cancelEdit() {
       editingId = null;
 
-      // Reseta visual do formulário
+      // Repõe aspeto do formulário
       document.getElementById("formSectionTitle").innerHTML = `<i class="fa-solid fa-square-plus text-blue-500"></i> Criar Novo Verbete`;
       document.getElementById("formSubmitBtn").className = "flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer";
       document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista`;
@@ -736,7 +654,7 @@
       autoGenerateId();
     }
 
-    // Salva o verbete (Cria novo ou atualiza existente)
+    // Guarda o verbete (Cria novo ou atualiza existente)
     function addVerbete(e) {
       e.preventDefault();
       
@@ -779,7 +697,7 @@
         }
         database.push(verbeteData);
         
-        // Reseta form padrão
+        // Repõe o form padrão
         document.getElementById("verbeteForm").reset();
         document.getElementById("formIconCustom").value = "";
         autoGenerateId();
@@ -792,7 +710,7 @@
       renderAdminVerbetesList();
     }
 
-    // Renderiza a lista de exclusão rápida de verbetes no painel
+    // Renderiza a lista de exclusão/edição rápida de verbetes no painel
     function renderAdminVerbetesList() {
       const listContainer = document.getElementById("adminVerbetesList");
       document.getElementById("adminListCount").textContent = database.length;
@@ -827,12 +745,12 @@
       });
     }
 
-    // Deleta um verbete
+    // Elimina um verbete
     function deleteVerbete(id) {
-      const confirmRemove = confirm("Tem certeza que deseja excluir permanentemente este verbete?");
+      const confirmRemove = confirm("Tem a certeza que deseja excluir permanentemente este verbete?");
       if (!confirmRemove) return;
 
-      // Se deletar o item que está sendo editado, cancela a edição ativa
+      // Se eliminar o item que está a ser editado, cancela a edição ativa
       if (editingId === id) {
         cancelEdit();
       }
@@ -864,7 +782,7 @@
       renderFeed();
     }
 
-    // Monitora a pesquisa
+    // Monitoriza a pesquisa
     function filterDatabase() {
       searchQuery = document.getElementById("searchInput").value.toLowerCase();
       renderFeed();
@@ -1022,20 +940,20 @@
       }, 3500);
     }
 
-    // Função para auxiliar os usuários que desejam trocar sua senha estática
+    // Função para auxiliar os utilizadores que desejam trocar a sua senha estática
     function generateCustomHash() {
       const passString = document.getElementById("newPassString").value.trim();
       if (passString === "") {
         showCustomNotice("Digite uma senha no campo antes de clicar!", "error");
         return;
       }
-      const outputHash = sha256(passString);
+      const outputHash = CryptoJS.SHA256(passString).toString();
       const outputBox = document.getElementById("newHashResult");
       outputBox.innerHTML = `<strong>Senha:</strong> ${passString}<br><strong>Hash Gerado:</strong><br><span class="text-indigo-600">${outputHash}</span><br><br><span class="text-[9px]">Copie o hash em azul acima e substitua a variável <strong>ADMIN_HASH</strong> no código do seu index.html!</span>`;
       outputBox.classList.remove("hidden");
     }
 
-    // FUNÇÃO MASTER: Reconstrói dinamicamente o arquivo index.html completo e o descarrega no navegador
+    // FUNÇÃO MASTER: Reconstrói dinamicamente o arquivo index.html completo e descarrega-o no navegador
     function downloadUpdatedHTML() {
       // Cria a representação textual e higienizada do banco de dados local
       const stringifiedDB = JSON.stringify(database, null, 2);
@@ -1059,7 +977,7 @@
       downloadLink.click();
       document.body.removeChild(downloadLink);
 
-      showCustomNotice("Arquivo index.html baixado! Suba-o para o GitHub para atualizar.", "success");
+      showCustomNotice("Ficheiro index.html descarregado! Suba-o para o GitHub para atualizar.", "success");
     }
   </script>
 </body>
