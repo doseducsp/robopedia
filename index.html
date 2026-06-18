@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robopédia - Enciclopédia de Robótica</title>
+  
+  <!-- Tailwind CSS para Design Moderno e Responsivo -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome para Ícones Incríveis -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    /* Esconde a barra de rolagem mas mantém a rolagem funcional (útil para o menu de categorias no celular) */
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Container responsivo para vídeos do YouTube (mantém proporção 16:9) */
+    .video-responsive {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .video-responsive iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 1.5rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-500 selection:text-white">
+
+  <!-- ================================================================= -->
+  <!-- ⚙️ BANCO DE DADOS DOS VERBETES (CADASTRE NOVOS ITENS AQUI!)        -->
+  <!-- ================================================================= -->
+  <script>
+    const database = [
+      {
+        id: "motor-dc",
+        category: "Atuadores",
+        icon: "fa-solid fa-gear",
+        color: "from-orange-500 to-amber-500",
+        badgeBg: "bg-orange-50 text-orange-700 border-orange-200",
+        title: "Motor DC",
+        short: "Motor de corrente contínua para dar movimento aos robôs.",
+        description: "O Motor de Corrente Contínua (DC) é um atuador eletromecânico que converte energia elétrica em movimento rotacional. Ele é amplamente utilizado em rodas de robôs móveis, garras e pequenos mecanismos que necessitam de força motriz direta.",
+        example: "Para controlar a velocidade e o sentido de rotação de um Motor DC no Micro:bit ou Arduino, normalmente utilizamos um circuito chamado Ponte H (como o chip L298N ou blocos de extensão dedicados).",
+        // Tipo de mídia suportado: link de imagem/gif (terminado em .png, .jpg, .gif) ou link de incorporação do YouTube (embed)
+        media: "https://media.giphy.com/media/l41lWfcNbLXGQ8sU0/giphy.gif"
+      },
+      {
+        id: "sensor-ultrassonico",
+        category: "Sensores",
+        icon: "fa-solid fa-wave-square",
+        color: "from-emerald-500 to-teal-500",
+        badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        title: "Sensor Ultrassônico",
+        short: "Mede distâncias e detecta obstáculos usando ondas sonoras.",
+        description: "Funciona enviando um pulso de som de alta frequência (inaudível para humanos). Esse som viaja pelo ar, bate em um obstáculo e retorna ao sensor. Ao calcular o tempo que a onda levou para ir e voltar, o microcontrolador descobre a distância exata até o objeto.",
+        example: "Muito usado em robôs seguidores de linha ou robôs limpa-trilho para evitar colisões com paredes ou objetos.",
+        media: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "led-rgb",
+        category: "Displays",
+        icon: "fa-solid fa-lightbulb",
+        color: "from-blue-500 to-indigo-500",
+        badgeBg: "bg-blue-50 text-blue-700 border-blue-200",
+        title: "LED RGB",
+        short: "Diodo emissor de luz capaz de gerar milhões de cores combinando Vermelho, Verde e Azul.",
+        description: "O LED RGB reúne três pequenos LEDs dentro de um único componente: um Vermelho (Red), um Verde (Green) e um Azul (Blue). Controlando a intensidade elétrica enviada para cada um deles, você pode misturar as cores e criar qualquer tom imaginável.",
+        example: "No MakeCode, você pode programar o LED RGB para acender em verde quando o robô estiver livre, amarelo se houver obstáculo próximo e vermelho se precisar parar imediatamente.",
+        media: "https://www.youtube.com/embed/S_B78Gq8oQk" // Exemplo de vídeo incorporado do YouTube
+      },
+      {
+        id: "servo-motor",
+        category: "Atuadores",
+        icon: "fa-solid fa-compass",
+        color: "from-purple-500 to-pink-500",
+        badgeBg: "bg-purple-50 text-purple-700 border-purple-200",
+        title: "Servo Motor",
+        short: "Atuador que permite controlar a posição angular exata (geralmente entre 0° e 180°).",
+        description: "Diferente do motor comum que gira continuamente, o Servo Motor possui um circuito de feedback interno que monitora sua própria posição. Ele recebe um sinal de comando e se move precisamente até o ângulo desejado, mantendo essa posição com firmeza.",
+        example: "Ideal para movimentar articulações de braços robóticos, direção de carrinhos r/c ou fazer movimentos de varredura com sensores.",
+        media: "" // Sem mídia: o site se ajusta dinamicamente ocultando a seção de mídia
+      }
+    ];
+  </script>
+  <!-- ================================================================= -->
+
+  <!-- CABEÇALHO DA PÁGINA -->
+  <header class="bg-blue-600 text-white pt-16 pb-24 px-4 rounded-b-[3rem] shadow-xl relative overflow-hidden">
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <h1 class="text-5xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-md">
+        <a href="#" onclick="goHome(); return false;" class="hover:opacity-90 transition-opacity">🤖 Robopédia</a>
+      </h1>
+      <p class="text-blue-100 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-8">
+        Guia dinâmico e enciclopédia de componentes para seus projetos de robótica.
+      </p>
+
+      <!-- BARRA DE PESQUISA (Apenas na Home) -->
+      <div id="searchBarContainer" class="max-w-xl mx-auto relative group">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+          <i class="fa-solid fa-magnifying-glass text-lg"></i>
+        </div>
+        <input type="text" id="searchInput" oninput="filterDatabase()" placeholder="Buscar sensor, atuador, comando..." class="w-full pl-12 pr-4 py-4 rounded-2xl bg-white text-slate-800 placeholder-slate-400 border-none shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium transition-all text-base md:text-lg">
+      </div>
+    </div>
+    
+    <!-- Elementos Decorativos de Fundo -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+      <i class="fa-solid fa-microchip text-[18rem] absolute -top-10 -left-10 transform -rotate-12"></i>
+      <i class="fa-solid fa-robot text-[20rem] absolute -bottom-16 -right-10 transform rotate-12"></i>
+    </div>
+  </header>
+
+  <!-- SEÇÃO DE CONTEÚDO PRINCIPAL (TELA INICIAL) -->
+  <main id="homePage" class="max-w-6xl mx-auto px-4 -mt-10 pb-20 relative z-20">
+    
+    <!-- MENU DE CATEGORIAS (Filtros Rápidos) -->
+    <div class="flex gap-3 overflow-x-auto pb-4 mb-10 scrollbar-none justify-start md:justify-center">
+      <button onclick="selectCategory('Todos')" id="catBtn-Todos" class="category-btn shrink-0 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-md border-2 border-transparent transition-all hover:scale-105">
+        ⚡ Todos
+      </button>
+      <div id="dynamicCategories" class="flex gap-3">
+        <!-- As categorias serão povoadas de forma dinâmica pelo JavaScript -->
+      </div>
+    </div>
+
+    <!-- FEED DE CARDS -->
+    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <!-- Cards renderizados dinamicamente -->
+    </div>
+
+    <!-- FEEDBACK DE BUSCA VAZIA -->
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+        <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-slate-700 mb-2">Nenhum verbete encontrado</h3>
+      <p class="text-slate-500">Tente buscar por termos diferentes ou selecione outra categoria.</p>
+    </div>
+  </main>
+
+  <!-- VISUALIZAÇÃO DETALHADA DO VERBETE -->
+  <article id="detailPage" class="hidden max-w-4xl mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <!-- Botão Flutuante de Voltar -->
+    <button onclick="goHome()" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 rounded-2xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-lg border border-slate-100 mb-8 cursor-pointer group hover:-translate-y-0.5">
+      <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Voltar à Enciclopédia
+    </button>
+
+    <!-- Card de Conteúdo Principal -->
+    <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-slate-100 relative overflow-hidden">
+      
+      <!-- Cabeçalho do Detalhe -->
+      <div class="flex flex-col md:flex-row gap-8 items-start mb-8 relative z-10">
+        <!-- Ícone Redondo Gigante -->
+        <div id="detailIconBox" class="w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-br text-white flex items-center justify-center shrink-0 shadow-lg text-5xl transform rotate-3 ring-8 ring-white">
+          <i id="detailIcon" class="fa-solid fa-robot"></i>
+        </div>
+        
+        <!-- Textos Principais -->
+        <div class="flex-1">
+          <span id="detailCategoryBadge" class="inline-block px-4 py-1.5 text-xs font-black rounded-xl uppercase tracking-wider border mb-4">
+            Categoria
+          </span>
+          <h2 id="detailTitle" class="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-3">
+            Título do Item
+          </h2>
+          <p id="detailShort" class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed">
+            Resumo curto explicando a função geral.
+          </p>
+        </div>
+      </div>
+
+      <div class="w-full h-px bg-slate-100 my-8"></div>
+
+      <!-- Corpo da Postagem -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+        
+        <!-- Bloco de Mídias (Imagem, GIF ou Vídeo) -->
+        <div id="mediaBox" class="lg:col-span-12 hidden">
+          <!-- O JS vai injetar a imagem ou o iframe do YouTube aqui -->
+        </div>
+
+        <div class="lg:col-span-12 space-y-8">
+          <div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span class="w-2 h-6 bg-blue-600 rounded-full inline-block"></span> Como Funciona?
+            </h3>
+            <p id="detailDescription" class="text-slate-600 text-lg leading-relaxed whitespace-pre-line">
+              Texto completo com as especificações técnicas, utilidade e funcionamento.
+            </p>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-100 rounded-2.5xl p-6 md:p-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-code text-blue-500"></i> Exemplo Prático de Uso
+            </h3>
+            <p id="detailExample" class="text-slate-600 italic text-base md:text-lg leading-relaxed whitespace-pre-line">
+              Exemplo de bloco MakeCode ou lógica aplicada em sala de aula.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ícone Sutil de Decoração de Fundo no Card -->
+      <div class="absolute bottom-0 right-0 w-full h-full overflow-hidden opacity-[0.02] pointer-events-none">
+        <i class="fa-solid fa-book-open text-[30rem] absolute -bottom-24 -right-24 transform -rotate-12"></i>
+      </div>
+    </div>
+  </article>
+
+  <!-- RODAPÉ -->
+  <footer class="bg-slate-900 text-slate-400 py-12 text-center border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-4">
+      <p class="text-sm mb-2">&copy; 2026 Robopédia. Criado com ❤️ para professores e estudantes de robótica.</p>
+      <p class="text-xs text-slate-600">Hospedado gratuitamente no GitHub Pages</p>
+    </div>
+  </footer>
+
+  <!-- LÓGICA DE PROGRAMAÇÃO DA ENCICLOPÉDIA -->
+  <script>
+    let activeCategory = "Todos";
+    let searchQuery = "";
+
+    // Inicialização da Página
+    window.onload = function() {
+      generateCategoriesMenu();
+      renderFeed();
+    };
+
+    // Gera o menu de filtros baseado nas categorias que existem no banco de dados
+    function generateCategoriesMenu() {
+      const catContainer = document.getElementById("dynamicCategories");
+      
+      // Obtém categorias únicas do banco de dados
+      const categories = [...new Set(database.map(item => item.category))];
+      
+      catContainer.innerHTML = "";
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.id = `catBtn-${category}`;
+        btn.className = "category-btn shrink-0 px-6 py-3 bg-white text-slate-600 font-bold rounded-2xl shadow-sm border-2 border-transparent transition-all hover:scale-105 hover:bg-slate-100";
+        btn.textContent = category;
+        btn.onclick = () => selectCategory(category);
+        catContainer.appendChild(btn);
+      });
+    }
+
+    // Gerencia o clique no menu de categorias
+    function selectCategory(category) {
+      activeCategory = category;
+      
+      // Atualiza estilo visual dos botões
+      document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.classList.remove("bg-blue-600", "text-white", "shadow-md");
+        btn.classList.add("bg-white", "text-slate-600", "shadow-sm", "hover:bg-slate-100");
+      });
+
+      const selectedBtn = document.getElementById(`catBtn-${category}`);
+      if (selectedBtn) {
+        selectedBtn.classList.remove("bg-white", "text-slate-600", "shadow-sm", "hover:bg-slate-100");
+        selectedBtn.classList.add("bg-blue-600", "text-white", "shadow-md");
+      }
+
+      renderFeed();
+    }
+
+    // Monitora a pesquisa
+    function filterDatabase() {
+      searchQuery = document.getElementById("searchInput").value.toLowerCase();
+      renderFeed();
+    }
+
+    // Filtra e Renderiza os Cards na Tela Inicial
+    function renderFeed() {
+      const cardsGrid = document.getElementById("cardsGrid");
+      const emptyState = document.getElementById("emptyState");
+      cardsGrid.innerHTML = "";
+
+      const filteredItems = database.filter(item => {
+        const matchesCategory = (activeCategory === "Todos" || item.category === activeCategory);
+        const matchesSearch = (
+          item.title.toLowerCase().includes(searchQuery) ||
+          item.short.toLowerCase().includes(searchQuery) ||
+          item.description.toLowerCase().includes(searchQuery) ||
+          item.category.toLowerCase().includes(searchQuery)
+        );
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filteredItems.length === 0) {
+        cardsGrid.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      cardsGrid.classList.remove("hidden");
+      emptyState.classList.add("hidden");
+
+      filteredItems.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "group flex flex-col bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-100 relative cursor-pointer h-full";
+        card.onclick = () => openDetailPage(item.id);
+
+        card.innerHTML = `
+          <!-- Categoria Badge -->
+          <span class="absolute top-6 right-6 inline-block px-3 py-1 text-[10px] font-black rounded-xl uppercase tracking-wider z-10 ${item.badgeBg}">
+            ${item.category}
+          </span>
+          
+          <!-- Ícone do Componente -->
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center shrink-0 mb-6 shadow-md group-hover:scale-110 transition-transform duration-300 group-hover:rotate-3 text-2xl">
+            <i class="${item.icon}"></i>
+          </div>
+          
+          <!-- Textos -->
+          <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+            ${item.title}
+          </h3>
+          <p class="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-4">
+            ${item.short}
+          </p>
+          
+          <!-- Botão Conhecer Mais (Fundo do Card) -->
+          <span class="mt-auto inline-flex items-center gap-1.5 text-blue-600 font-extrabold text-sm hover:text-blue-800">
+            Conhecer <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+          </span>
+        `;
+        cardsGrid.appendChild(card);
+      });
+    }
+
+    // Abre a visualização de detalhes de um item específico
+    function openDetailPage(id) {
+      const item = database.find(x => x.id === id);
+      if (!item) return;
+
+      // Configura Ícone, Cores e Badges
+      const iconBox = document.getElementById("detailIconBox");
+      iconBox.className = `w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center shrink-0 shadow-lg text-5xl transform rotate-3 ring-8 ring-white`;
+      document.getElementById("detailIcon").className = item.icon;
+      
+      const badge = document.getElementById("detailCategoryBadge");
+      badge.className = `inline-block px-4 py-1.5 text-xs font-black rounded-xl uppercase tracking-wider border ${item.badgeBg}`;
+      badge.textContent = item.category;
+
+      // Alimenta textos básicos
+      document.getElementById("detailTitle").textContent = item.title;
+      document.getElementById("detailShort").textContent = item.short;
+      document.getElementById("detailDescription").textContent = item.description;
+      document.getElementById("detailExample").textContent = item.example;
+
+      // Trata as Mídias (Vídeo, Imagem ou GIF)
+      const mediaBox = document.getElementById("mediaBox");
+      mediaBox.innerHTML = "";
+      
+      if (item.media && item.media.trim() !== "") {
+        mediaBox.classList.remove("hidden");
+        
+        if (item.media.includes("youtube.com") || item.media.includes("youtu.be")) {
+          // É um vídeo do YouTube
+          mediaBox.innerHTML = `
+            <div class="video-responsive shadow-lg mb-4">
+              <iframe src="${item.media}" title="Demonstração do Componente" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+          `;
+        } else {
+          // Presume que é um link de imagem ou GIF comum
+          mediaBox.innerHTML = `
+            <img src="${item.media}" alt="${item.title}" class="w-full max-h-[400px] object-cover rounded-2.5xl shadow-md mb-4 hover:scale-[1.01] transition-transform duration-300">
+          `;
+        }
+      } else {
+        mediaBox.classList.add("hidden");
+      }
+
+      // Alterna as visualizações de tela
+      document.getElementById("homePage").classList.add("hidden");
+      document.getElementById("searchBarContainer").classList.add("invisible");
+      document.getElementById("detailPage").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Retorna para a tela de lista de verbetes
+    function goHome() {
+      document.getElementById("detailPage").classList.add("hidden");
+      document.getElementById("homePage").classList.remove("hidden");
+      document.getElementById("searchBarContainer").classList.remove("invisible");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  </script>
+</body>
+</html>
