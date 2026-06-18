@@ -247,19 +247,37 @@
         <i class="fa-solid fa-lock text-3xl"></i>
       </div>
       <h2 class="text-3xl font-black text-slate-800 mb-2">Painel de Controlo</h2>
-      <p class="text-slate-500 mb-6 text-sm">Use o teclado virtual abaixo para digitar a senha de acesso.</p>
+      <p class="text-slate-500 mb-6 text-sm">Digite no teclado ou use o teclado virtual abaixo.</p>
       
       <div class="space-y-4 text-left">
         
-        <!-- TECLADO VIRTUAL QWERTY -->
+        <!-- TECLADO VIRTUAL QWERTY COM NÚMEROS -->
         <div>
           <label class="block text-slate-700 text-sm font-bold mb-2">Senha do Administrador</label>
           
-          <!-- Visor da Senha (Input Padrão Oculto) -->
-          <input type="password" id="adminPasswordInput" readonly class="w-full px-4 py-4 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-4 focus:ring-blue-100 font-medium text-center tracking-[0.5em] text-xl cursor-not-allowed mb-4 shadow-inner text-blue-600" placeholder="••••••••">
+          <!-- Visor da Senha (Input Livre + Botão Olho) -->
+          <div class="relative w-full mb-4">
+            <input type="password" id="adminPasswordInput" onkeydown="if(event.key === 'Enter') attemptLogin()" class="w-full px-4 py-4 pr-12 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 font-medium tracking-[0.2em] text-lg shadow-inner text-slate-700 transition-colors" placeholder="••••••••">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-blue-600 focus:outline-none p-2" title="Ver senha">
+              <i id="eyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
           
           <!-- Botões do Teclado QWERTY -->
           <div class="flex flex-col gap-2">
+            <!-- Linha 0 (Números) -->
+            <div class="flex justify-center gap-1">
+              <button type="button" onclick="typeLetter('1')" class="kbd-btn">1</button>
+              <button type="button" onclick="typeLetter('2')" class="kbd-btn">2</button>
+              <button type="button" onclick="typeLetter('3')" class="kbd-btn">3</button>
+              <button type="button" onclick="typeLetter('4')" class="kbd-btn">4</button>
+              <button type="button" onclick="typeLetter('5')" class="kbd-btn">5</button>
+              <button type="button" onclick="typeLetter('6')" class="kbd-btn">6</button>
+              <button type="button" onclick="typeLetter('7')" class="kbd-btn">7</button>
+              <button type="button" onclick="typeLetter('8')" class="kbd-btn">8</button>
+              <button type="button" onclick="typeLetter('9')" class="kbd-btn">9</button>
+              <button type="button" onclick="typeLetter('0')" class="kbd-btn">0</button>
+            </div>
             <!-- Linha 1 -->
             <div class="flex justify-center gap-1">
               <button type="button" onclick="typeLetter('q')" class="kbd-btn">q</button>
@@ -557,6 +575,8 @@
           showAdminPanel();
         } else {
           document.getElementById("loginPage").classList.remove("hidden");
+          // Foca no input automaticamente ao abrir
+          setTimeout(() => document.getElementById("adminPasswordInput").focus(), 100);
         }
       } else if (hash.startsWith("#item-")) {
         const itemId = hash.replace("#item-", "");
@@ -568,31 +588,79 @@
       }
     }
 
+    // Função de ver a senha
+    function togglePasswordVisibility() {
+      const input = document.getElementById("adminPasswordInput");
+      const icon = document.getElementById("eyeIcon");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+        icon.classList.add("text-blue-600");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+        icon.classList.remove("text-blue-600");
+      }
+      input.focus();
+    }
+
     // Funções do Teclado Virtual QWERTY
     function typeLetter(letter) {
       const input = document.getElementById("adminPasswordInput");
       input.value += letter;
+      input.focus();
     }
 
     function backspace() {
       const input = document.getElementById("adminPasswordInput");
       input.value = input.value.slice(0, -1);
+      input.focus();
     }
 
     function clearPassword() {
       const input = document.getElementById("adminPasswordInput");
       input.value = "";
+      input.focus();
     }
 
-    // Executa a tentativa de login do admin utilizando a biblioteca externa fiável (CryptoJS)
-    function attemptLogin() {
+    // Executa a tentativa de login assíncrona (com Dupla Proteção de Falha)
+    async function attemptLogin() {
       const inputPass = document.getElementById("adminPasswordInput").value.trim().toLowerCase();
-      // CryptoJS garante a encriptação exata e síncrona em qualquer ambiente web
-      const hashedInput = CryptoJS.SHA256(inputPass).toString();
+      
+      if (!inputPass) {
+        showCustomNotice("Digite a senha primeiro!", "error");
+        return;
+      }
+
+      let hashedInput = "";
+
+      try {
+        // 1º TENTATIVA: Usar CryptoJS (Se a CDN tiver carregado perfeitamente)
+        if (typeof CryptoJS !== 'undefined') {
+          hashedInput = CryptoJS.SHA256(inputPass).toString();
+        } 
+        // 2º TENTATIVA (FALLBACK): Usar API nativa do navegador se o CryptoJS for bloqueado
+        else if (crypto && crypto.subtle) {
+          const msgBuffer = new TextEncoder().encode(inputPass);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          hashedInput = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+      } catch (error) {
+        console.error("Erro no processamento da encriptação", error);
+      }
 
       if (hashedInput === ADMIN_HASH) {
         sessionStorage.setItem("robopedia_admin", "true");
         document.getElementById("adminPasswordInput").value = "";
+        
+        // Garante que o input volte a ficar como 'password'
+        const input = document.getElementById("adminPasswordInput");
+        input.type = "password";
+        document.getElementById("eyeIcon").className = "fa-solid fa-eye";
+
         showCustomNotice("Acesso permitido! Bem-vindo.", "success");
         showAdminPanel();
       } else {
@@ -1049,13 +1117,28 @@
     }
 
     // Função para auxiliar os utilizadores que desejam trocar a sua senha estática
-    function generateCustomHash() {
+    async function generateCustomHash() {
       const passString = document.getElementById("newPassString").value.trim();
       if (passString === "") {
         showCustomNotice("Digite uma senha no campo antes de clicar!", "error");
         return;
       }
-      const outputHash = CryptoJS.SHA256(passString).toString();
+      
+      let outputHash = "";
+      try {
+        if (typeof CryptoJS !== 'undefined') {
+          outputHash = CryptoJS.SHA256(passString).toString();
+        } else if (crypto && crypto.subtle) {
+          const msgBuffer = new TextEncoder().encode(passString);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          outputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+      } catch(e) {
+          showCustomNotice("Erro a gerar hash. Verifique a consola.", "error");
+          return;
+      }
+
       const outputBox = document.getElementById("newHashResult");
       outputBox.innerHTML = `<strong>Senha:</strong> ${passString}<br><strong>Hash Gerado:</strong><br><span class="text-indigo-600">${outputHash}</span><br><br><span class="text-[9px]">Copie o hash em azul acima e substitua a variável <strong>ADMIN_HASH</strong> no código do seu index.html!</span>`;
       outputBox.classList.remove("hidden");
