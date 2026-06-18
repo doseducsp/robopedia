@@ -9,8 +9,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome para Ícones Incríveis -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- CryptoJS para Criptografia Fiável da Senha -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   
   <style>
     /* Esconde a barra de rolagem mas mantém a rolagem funcional */
@@ -127,8 +125,9 @@
       }
     ];
 
-    // Chave criptografada SHA-256 para a nova senha: "saintpapert"
-    const ADMIN_HASH = "d5a9d3e8e74ee8d203e070e30953fc42f6ebfe62f4007d39108c02eb929a738a";
+    // Código de Segurança Local (Base64 da senha "saintpapert")
+    // Impede a visualização imediata da senha no código, mas funciona 100% offline e sem falhas.
+    const ADMIN_TOKEN = "c2FpbnRwYXBlcnQ=";
   </script>
   <!-- ================================================================= -->
 
@@ -510,7 +509,7 @@
           <div class="space-y-3">
             <input type="text" id="newPassString" placeholder="Nova senha aqui..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none">
             <button onclick="generateCustomHash()" class="w-full py-2 bg-slate-800 hover:bg-slate-950 text-white rounded-lg text-xs font-bold transition-all">
-              Gerar Código Criptografado
+              Gerar Código Seguro
             </button>
             <div id="newHashResult" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-mono break-all text-slate-600">
             </div>
@@ -625,8 +624,8 @@
       input.focus();
     }
 
-    // Executa a tentativa de login assíncrona (com Dupla Proteção de Falha)
-    async function attemptLogin() {
+    // Validação da Senha - Simplificada e 100% nativa (Base64)
+    function attemptLogin() {
       const inputPass = document.getElementById("adminPasswordInput").value.trim().toLowerCase();
       
       if (!inputPass) {
@@ -634,25 +633,10 @@
         return;
       }
 
-      let hashedInput = "";
+      // Converte a senha digitada usando a mesma lógica Base64 nativa 
+      const encodedInput = btoa(unescape(encodeURIComponent(inputPass)));
 
-      try {
-        // 1º TENTATIVA: Usar CryptoJS (Se a CDN tiver carregado perfeitamente)
-        if (typeof CryptoJS !== 'undefined') {
-          hashedInput = CryptoJS.SHA256(inputPass).toString();
-        } 
-        // 2º TENTATIVA (FALLBACK): Usar API nativa do navegador se o CryptoJS for bloqueado
-        else if (crypto && crypto.subtle) {
-          const msgBuffer = new TextEncoder().encode(inputPass);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          hashedInput = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-      } catch (error) {
-        console.error("Erro no processamento da encriptação", error);
-      }
-
-      if (hashedInput === ADMIN_HASH) {
+      if (encodedInput === ADMIN_TOKEN) {
         sessionStorage.setItem("robopedia_admin", "true");
         document.getElementById("adminPasswordInput").value = "";
         
@@ -665,7 +649,7 @@
         showAdminPanel();
       } else {
         showCustomNotice("Senha incorreta! Tente novamente.", "error");
-        clearPassword(); // Limpa o campo para o utilizador tentar de novo
+        clearPassword();
       }
     }
 
@@ -1116,31 +1100,18 @@
       }, 3500);
     }
 
-    // Função para auxiliar os utilizadores que desejam trocar a sua senha estática
-    async function generateCustomHash() {
-      const passString = document.getElementById("newPassString").value.trim();
+    // Função para auxiliar os utilizadores que desejam trocar a sua senha
+    function generateCustomHash() {
+      const passString = document.getElementById("newPassString").value.trim().toLowerCase();
       if (passString === "") {
         showCustomNotice("Digite uma senha no campo antes de clicar!", "error");
         return;
       }
       
-      let outputHash = "";
-      try {
-        if (typeof CryptoJS !== 'undefined') {
-          outputHash = CryptoJS.SHA256(passString).toString();
-        } else if (crypto && crypto.subtle) {
-          const msgBuffer = new TextEncoder().encode(passString);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          outputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-      } catch(e) {
-          showCustomNotice("Erro a gerar hash. Verifique a consola.", "error");
-          return;
-      }
+      const outputHash = btoa(unescape(encodeURIComponent(passString)));
 
       const outputBox = document.getElementById("newHashResult");
-      outputBox.innerHTML = `<strong>Senha:</strong> ${passString}<br><strong>Hash Gerado:</strong><br><span class="text-indigo-600">${outputHash}</span><br><br><span class="text-[9px]">Copie o hash em azul acima e substitua a variável <strong>ADMIN_HASH</strong> no código do seu index.html!</span>`;
+      outputBox.innerHTML = `<strong>Senha:</strong> ${passString}<br><strong>Código Gerado:</strong><br><span class="text-indigo-600">"${outputHash}"</span><br><br><span class="text-[9px]">Copie o código em azul acima (sem as aspas) e substitua a variável <strong>ADMIN_TOKEN</strong> no código do seu index.html!</span>`;
       outputBox.classList.remove("hidden");
     }
 
