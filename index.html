@@ -91,8 +91,8 @@
       }
     ];
 
-    // Chave criptografada SHA-256 para a nova senha: "pensamentocomputacional"
-    const ADMIN_HASH = "8be37b019b85db6fc694c9ec8d783e7401df499696c3bf04e9c704a29a009fb7";
+    // Chave criptografada SHA-256 para a nova senha: "saintpapert"
+    const ADMIN_HASH = "d5a9d3e8e74ee8d203e070e30953fc42f6ebfe62f4007d39108c02eb929a738a";
   </script>
   <!-- ================================================================= -->
 
@@ -246,9 +246,9 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <!-- Formulário de Cadastro -->
+      <!-- Formulário de Cadastro / Edição -->
       <div class="lg:col-span-7 bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
-        <h3 class="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+        <h3 id="formSectionTitle" class="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
           <i class="fa-solid fa-square-plus text-blue-500"></i> Criar Novo Verbete
         </h3>
         
@@ -259,7 +259,7 @@
               <input type="text" id="formTitle" required oninput="autoGenerateId()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor de Toque">
             </div>
             <div>
-              <label class="block text-slate-700 text-sm font-bold mb-2">ID Único (Auto-gerado)</label>
+              <label class="block text-slate-700 text-sm font-bold mb-2">ID Único (Identificador URL)</label>
               <input type="text" id="formId" required class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 focus:outline-none cursor-not-allowed" readonly placeholder="Ex: sensor-de-toque">
             </div>
           </div>
@@ -301,32 +301,32 @@
             <label class="block text-slate-700 text-sm font-bold mb-2">Estilo visual / Cor do Card</label>
             <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
               <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
-                <input type="radio" name="colorOption" value="blue" checked class="accent-blue-600">
+                <input type="radio" name="colorOption" id="color-blue" value="blue" checked class="accent-blue-600">
                 <span class="w-4 h-4 rounded-full bg-blue-500"></span>
                 <span class="text-[10px] text-slate-500">Azul</span>
               </label>
               <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
-                <input type="radio" name="colorOption" value="emerald" class="accent-emerald-600">
+                <input type="radio" name="colorOption" id="color-emerald" value="emerald" class="accent-emerald-600">
                 <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
                 <span class="text-[10px] text-slate-500">Verde</span>
               </label>
               <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
-                <input type="radio" name="colorOption" value="orange" class="accent-orange-600">
+                <input type="radio" name="colorOption" id="color-orange" value="orange" class="accent-orange-600">
                 <span class="w-4 h-4 rounded-full bg-orange-500"></span>
                 <span class="text-[10px] text-slate-500">Laranja</span>
               </label>
               <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
-                <input type="radio" name="colorOption" value="purple" class="accent-purple-600">
+                <input type="radio" name="colorOption" id="color-purple" value="purple" class="accent-purple-600">
                 <span class="w-4 h-4 rounded-full bg-purple-500"></span>
                 <span class="text-[10px] text-slate-500">Roxo</span>
               </label>
               <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
-                <input type="radio" name="colorOption" value="rose" class="accent-rose-600">
+                <input type="radio" name="colorOption" id="color-rose" value="rose" class="accent-rose-600">
                 <span class="w-4 h-4 rounded-full bg-rose-500"></span>
                 <span class="text-[10px] text-slate-500">Rosa</span>
               </label>
               <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
-                <input type="radio" name="colorOption" value="cyan" class="accent-cyan-600">
+                <input type="radio" name="colorOption" id="color-cyan" value="cyan" class="accent-cyan-600">
                 <span class="w-4 h-4 rounded-full bg-cyan-500"></span>
                 <span class="text-[10px] text-slate-500">Ciano</span>
               </label>
@@ -354,9 +354,14 @@
             <textarea id="formExample" required rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Como programar ou utilizar esse item na prática?"></textarea>
           </div>
 
-          <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
-            <i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista
-          </button>
+          <div class="flex gap-3">
+            <button type="submit" id="formSubmitBtn" class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
+              <i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista
+            </button>
+            <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all cursor-pointer text-sm">
+              Cancelar
+            </button>
+          </div>
         </form>
       </div>
 
@@ -377,7 +382,7 @@
           </button>
         </div>
 
-        <!-- Lista de Verbetes e Exclusão -->
+        <!-- Lista de Verbetes, Edição e Exclusão -->
         <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
           <h3 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
             <i class="fa-solid fa-list-check text-blue-500"></i> Verbetes Cadastrados (<span id="adminListCount">0</span>)
@@ -417,6 +422,7 @@
   <script>
     let activeCategory = "Todos";
     let searchQuery = "";
+    let editingId = null; // ID do verbete que está sendo editado no momento
     
     // Configurações de Paletas de Cores de acordo com as opções do Admin
     const colorPalettes = {
@@ -477,9 +483,9 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // Executa a tentativa de login do admin
+    // Executa a tentativa de login do admin (limpa espaços e normaliza em minúsculas)
     async function attemptLogin() {
-      const inputPass = document.getElementById("adminPasswordInput").value;
+      const inputPass = document.getElementById("adminPasswordInput").value.trim().toLowerCase();
       const hashedInput = await sha256(inputPass);
 
       if (hashedInput === ADMIN_HASH) {
@@ -565,6 +571,8 @@
 
     // Monitoramento do input do título do form para automatizar a criação do ID do elemento
     function autoGenerateId() {
+      if (editingId !== null) return; // Não gera novo ID se estiver editando um existente
+      
       const titleVal = document.getElementById("formTitle").value;
       const cleanId = titleVal
         .toLowerCase()
@@ -576,19 +584,88 @@
       document.getElementById("formId").value = cleanId;
     }
 
-    // Salva o novo verbete na base de dados em memória
+    // Inicializa a edição de um verbete existente
+    function startEdit(id) {
+      const item = database.find(x => x.id === id);
+      if (!item) return;
+
+      editingId = id;
+
+      // Altera títulos e botões do formulário
+      document.getElementById("formSectionTitle").innerHTML = `<i class="fa-solid fa-pencil text-amber-500"></i> Editar Verbete: ${item.title}`;
+      document.getElementById("formSubmitBtn").className = "flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer";
+      document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Salvar Alterações`;
+      document.getElementById("cancelEditBtn").classList.remove("hidden");
+
+      // Preenche os campos do formulário
+      document.getElementById("formTitle").value = item.title;
+      document.getElementById("formId").value = item.id;
+      document.getElementById("formId").classList.add("bg-slate-100"); // Realça que não se muda o ID
+      
+      // Ajusta Categoria
+      const selectCat = document.getElementById("formCategory");
+      if (![...selectCat.options].some(opt => opt.value === item.category)) {
+        const opt = document.createElement("option");
+        opt.value = item.category;
+        opt.textContent = item.category;
+        selectCat.appendChild(opt);
+      }
+      selectCat.value = item.category;
+
+      // Ajusta Ícone
+      const selectIcon = document.getElementById("formIcon");
+      if ([...selectIcon.options].some(opt => opt.value === item.icon)) {
+        selectIcon.value = item.icon;
+        document.getElementById("formIconCustom").value = "";
+      } else {
+        document.getElementById("formIconCustom").value = item.icon;
+      }
+
+      // Procura qual cor combina com a classe de gradiente para marcar o rádio
+      let detectedColor = "blue";
+      for (const [key, val] of Object.entries(colorPalettes)) {
+        if (item.color === val.color) {
+          detectedColor = key;
+          break;
+        }
+      }
+      const radioBtn = document.getElementById(`color-${detectedColor}`);
+      if (radioBtn) radioBtn.checked = true;
+
+      // Campos de texto restantes
+      document.getElementById("formShort").value = item.short;
+      document.getElementById("formMedia").value = item.media;
+      document.getElementById("formDescription").value = item.description;
+      document.getElementById("formExample").value = item.example;
+
+      // Foca no primeiro campo e sobe a tela
+      document.getElementById("formTitle").focus();
+      window.scrollTo({ top: document.getElementById("adminPage").offsetTop, behavior: "smooth" });
+    }
+
+    // Cancela a edição em andamento
+    function cancelEdit() {
+      editingId = null;
+
+      // Reseta visual do formulário
+      document.getElementById("formSectionTitle").innerHTML = `<i class="fa-solid fa-square-plus text-blue-500"></i> Criar Novo Verbete`;
+      document.getElementById("formSubmitBtn").className = "flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer";
+      document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista`;
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+      document.getElementById("formId").classList.remove("bg-slate-100");
+
+      document.getElementById("verbeteForm").reset();
+      document.getElementById("formIconCustom").value = "";
+      autoGenerateId();
+    }
+
+    // Salva o verbete (Cria novo ou atualiza existente)
     function addVerbete(e) {
       e.preventDefault();
       
-      const newId = document.getElementById("formId").value;
+      const formIdVal = document.getElementById("formId").value;
       
-      // Verifica se o ID já existe
-      if (database.some(x => x.id === newId)) {
-        showCustomNotice("Já existe um verbete cadastrado com este nome!", "error");
-        return;
-      }
-
-      // Captura a paleta de cor selecionada
+      // Captura a cor selecionada
       const colorSelected = document.querySelector('input[name="colorOption"]:checked').value;
       const palette = colorPalettes[colorSelected];
 
@@ -596,8 +673,8 @@
       const customIcon = document.getElementById("formIconCustom").value.trim();
       const finalIcon = customIcon !== "" ? customIcon : document.getElementById("formIcon").value;
 
-      const newVerbete = {
-        id: newId,
+      const verbeteData = {
+        id: formIdVal,
         category: document.getElementById("formCategory").value,
         icon: finalIcon,
         color: palette.color,
@@ -609,18 +686,33 @@
         media: document.getElementById("formMedia").value.trim()
       };
 
-      // Adiciona ao banco local temporário
-      database.push(newVerbete);
+      if (editingId !== null) {
+        // MODO EDIÇÃO: Atualiza item existente
+        const idx = database.findIndex(x => x.id === editingId);
+        if (idx !== -1) {
+          database[idx] = verbeteData;
+          showCustomNotice("Verbete atualizado com sucesso!", "success");
+        }
+        cancelEdit(); // Sai do modo de edição
+      } else {
+        // MODO CRIAÇÃO: Verifica duplicados antes de inserir
+        if (database.some(x => x.id === formIdVal)) {
+          showCustomNotice("Já existe um verbete cadastrado com este nome!", "error");
+          return;
+        }
+        database.push(verbeteData);
+        
+        // Reseta form padrão
+        document.getElementById("verbeteForm").reset();
+        document.getElementById("formIconCustom").value = "";
+        autoGenerateId();
+        showCustomNotice("Verbete adicionado com sucesso!", "success");
+      }
 
-      // Atualiza visualizações administrativas e normais
-      document.getElementById("verbeteForm").reset();
-      document.getElementById("formIconCustom").value = "";
-      autoGenerateId();
-
+      // Atualiza visualizações
       generateCategoriesMenu();
       renderFeed();
       renderAdminVerbetesList();
-      showCustomNotice("Verbete adicionado com sucesso!", "success");
     }
 
     // Renderiza a lista de exclusão rápida de verbetes no painel
@@ -634,18 +726,25 @@
         itemRow.className = "flex items-center justify-between bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-100 transition-colors";
         
         itemRow.innerHTML = `
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 text-sm">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <span class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 text-sm shrink-0">
               <i class="${item.icon}"></i>
             </span>
-            <div>
-              <p class="font-bold text-slate-800 text-sm leading-tight">${item.title}</p>
+            <div class="truncate">
+              <p class="font-bold text-slate-800 text-sm leading-tight truncate">${item.title}</p>
               <p class="text-[10px] text-slate-400">${item.category}</p>
             </div>
           </div>
-          <button onclick="deleteVerbete('${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-colors cursor-pointer" title="Remover este verbete">
-            <i class="fa-solid fa-trash-can text-xs"></i>
-          </button>
+          <div class="flex gap-1 shrink-0">
+            <!-- Botão Editar -->
+            <button onclick="startEdit('${item.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors cursor-pointer" title="Editar este verbete">
+              <i class="fa-solid fa-pencil text-xs"></i>
+            </button>
+            <!-- Botão Deletar -->
+            <button onclick="deleteVerbete('${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-colors cursor-pointer" title="Remover este verbete">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
         `;
         listContainer.appendChild(itemRow);
       });
@@ -655,6 +754,11 @@
     function deleteVerbete(id) {
       const confirmRemove = confirm("Tem certeza que deseja excluir permanentemente este verbete?");
       if (!confirmRemove) return;
+
+      // Se deletar o item que está sendo editado, cancela a edição ativa
+      if (editingId === id) {
+        cancelEdit();
+      }
 
       const idx = database.findIndex(x => x.id === id);
       if (idx !== -1) {
