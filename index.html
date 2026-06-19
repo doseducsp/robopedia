@@ -254,8 +254,12 @@
         // ATENÇÃO: PARA O SEU SITE OFICIAL, SUBSTITUA ESTE BLOCO PELO SEU CÓDIGO
         // =========================================================================
         const getFirebaseConfig = () => {
-            if (typeof __firebase_config !== 'undefined') {
-                return JSON.parse(__firebase_config);
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                try {
+                    return JSON.parse(__firebase_config);
+                } catch (e) {
+                    console.warn("Aviso: Usando chaves locais.");
+                }
             }
             return {
                 apiKey: "AIzaSyB0m6Wz0uFJsAjxHpXLZY54r9qbrj2Guss",
@@ -290,8 +294,11 @@
         // =========================================================================
         const initAuth = async () => {
             try {
-                // Inicia como anônimo para que o público em geral possa ver os cards
-                if (!auth.currentUser) {
+                // Tenta autenticação com o token da nossa plataforma de teste, se houver
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    // Inicia como anônimo para o público em geral
                     await signInAnonymously(auth);
                 }
             } catch (error) {
@@ -299,12 +306,12 @@
             }
         };
 
+        // Chama a inicialização apenas uma vez
+        initAuth();
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 setupDatabaseListener();
-            } else {
-                // Se não tiver usuário nenhum (nem anônimo), tenta logar anônimo de novo
-                initAuth();
             }
             renderApp(); // Re-renderiza a tela para verificar permissões de admin
         });
@@ -666,8 +673,7 @@
             }
         });
 
-        initAuth();
-        renderApp();
+        // A inicialização principal agora é feita logo após a declaração do initAuth()
     </script>
 </body>
 </html>
