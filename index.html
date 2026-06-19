@@ -1,1 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robopédia - A Enciclopédia da Robótica</title>
+    <!-- Carrega o Tailwind CSS para o design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ícones -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Cores base para os cards dependendo da categoria */
+        .cat-Hardware { background-color: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+        .cat-Software { background-color: #dcfce7; border-color: #86efac; color: #166534; }
+        .cat-Eletrônica { background-color: #fef08a; border-color: #fde047; color: #854d0e; }
+        .cat-Mecânica { background-color: #ffedd5; border-color: #fdba74; color: #9a3412; }
+        .cat-Curiosidades { background-color: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
+        .cat-Outros { background-color: #f3f4f6; border-color: #d1d5db; color: #374151; }
+        
+        .hide { display: none !important; }
+        
+        /* Efeito de vidro para o modal */
+        .glass-modal {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
 
+    <!-- CABEÇALHO -->
+    <header class="bg-indigo-600 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="#" class="text-3xl font-black tracking-tight flex items-center hover:text-indigo-200 transition">
+                <i class="fas fa-robot mr-3 text-4xl"></i> Robopédia
+            </a>
+            <!-- Link discreto para o admin (Funciona apenas se o usuário souber o caminho #admin) -->
+            <a href="#admin" class="text-indigo-400 hover:text-white text-sm transition-colors" title="Área do Administrador">
+                <i class="fas fa-cog"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- CONTAINER DE NOTIFICAÇÕES (TOASTS) -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- TELA PRINCIPAL (PÚBLICA) -->
+    <main id="view-public" class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Hero Section e Busca -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10 mb-8 text-center">
+            <h2 class="text-3xl md:text-5xl font-bold text-gray-800 mb-4">Aprenda Robótica de um jeito Fácil!</h2>
+            <p class="text-gray-500 mb-8 text-lg">Pesquise termos, componentes e conceitos do universo da tecnologia.</p>
+            
+            <div class="max-w-2xl mx-auto relative">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></i>
+                <input type="text" id="search-input" placeholder="O que você quer aprender hoje? Ex: Servomotor, Arduino..." 
+                    class="w-full pl-12 pr-4 py-4 rounded-full border-2 border-indigo-100 focus:border-indigo-500 focus:outline-none shadow-sm text-lg transition-colors">
+            </div>
+        </div>
+
+        <!-- Controles: Filtros e Organização -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex flex-wrap gap-2 justify-center" id="filters-container">
+                <!-- Botões de filtro injetados via JS -->
+            </div>
+            
+            <div class="flex items-center gap-2 bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+                <button onclick="window.setSort('random')" id="btn-sort-random" class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md font-semibold text-sm transition">
+                    <i class="fas fa-random mr-1"></i> Embaralhado
+                </button>
+                <button onclick="window.setSort('az')" id="btn-sort-az" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-semibold text-sm transition">
+                    <i class="fas fa-sort-alpha-down mr-1"></i> A-Z
+                </button>
+            </div>
+        </div>
+
+        <!-- Grade de Verbetes -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="cards-container">
+            <!-- Cards injetados via JS -->
+            <div class="col-span-full text-center py-10 text-gray-400 hidden" id="empty-state">
+                <i class="fas fa-satellite-dish text-6xl mb-4"></i>
+                <p class="text-xl">Nenhum verbete encontrado.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- TELA ADMIN -->
+    <main id="view-admin" class="max-w-6xl mx-auto px-4 py-8 hide">
+        
+        <!-- TELA DE LOGIN DO ADMIN -->
+        <div id="admin-login" class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center mt-10 hide">
+            <i class="fas fa-lock text-6xl text-indigo-500 mb-6 drop-shadow-md"></i>
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">Área Restrita</h2>
+            <p class="text-gray-500 mb-8">Apenas professores e administradores autorizados podem acessar o painel da Robopédia.</p>
+            <button onclick="window.loginAdmin()" class="w-full bg-white border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 text-gray-700 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-6 h-6" alt="Google">
+                Entrar com Google
+            </button>
+            <div class="mt-6">
+                <a href="#" class="text-sm text-indigo-500 hover:underline">← Voltar para a página inicial</a>
+            </div>
+        </div>
+
+        <!-- DASHBOARD DO ADMIN (Apenas logados autorizados) -->
+        <div id="admin-dashboard" class="hide">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-black text-gray-800"><i class="fas fa-cogs text-indigo-500 mr-2"></i> Painel de Controle</h2>
+                    <p class="text-gray-500">Cadastre, edite ou remova os termos da sua Robopédia.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.logoutAdmin()" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-5 rounded-xl transition shadow-sm flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Sair
+                    </button>
+                    <a href="#" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-5 rounded-xl transition shadow-sm flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Voltar à Enciclopédia
+                    </a>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Formulário -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border-2 border-indigo-50 lg:sticky top-24 h-fit">
+                    <h3 class="text-xl font-bold mb-4 flex items-center" id="form-title-display">
+                        <i class="fas fa-plus-circle text-green-500 mr-2"></i> Novo Verbete
+                    </h3>
+                    <form id="admin-form" class="space-y-4">
+                        <input type="hidden" id="form-id">
+                        
+                        <div class="grid grid-cols-4 gap-2">
+                            <div class="col-span-1">
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Ícone</label>
+                                <input type="text" id="form-icon" required placeholder="🤖" maxlength="2" class="w-full p-2 border rounded text-center text-xl bg-gray-50 focus:bg-white">
+                            </div>
+                            <div class="col-span-3">
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Título do Verbete</label>
+                                <input type="text" id="form-title" required placeholder="Ex: Arduino Uno" class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Categoria</label>
+                            <select id="form-category" required class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="Eletrônica">Eletrônica</option>
+                                <option value="Mecânica">Mecânica</option>
+                                <option value="Curiosidades">Curiosidades</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Resumo Curto (Uma frase)</label>
+                            <input type="text" id="form-summary" required placeholder="Ex: Placa de prototipagem eletrônica..." maxlength="120" class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">URL da Mídia (YouTube ou GIF/Imagem)</label>
+                            <input type="url" id="form-media" placeholder="Ex: https://youtube.com/watch?v=..." class="w-full p-2 border rounded bg-gray-50 focus:bg-white text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">O que é / Como funciona?</label>
+                            <textarea id="form-explanation" required rows="3" class="w-full p-2 border rounded bg-gray-50 focus:bg-white"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Exemplo Prático Contextualizado</label>
+                            <textarea id="form-example" required rows="2" class="w-full p-2 border rounded bg-gray-50 focus:bg-white" placeholder="Ex: Usado para piscar um LED ou controlar um robô carrinho..."></textarea>
+                        </div>
+
+                        <div class="flex gap-2 pt-2">
+                            <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow transition">
+                                Salvar Verbete
+                            </button>
+                            <button type="button" onclick="window.resetForm()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl transition">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Tabela de Cadastrados -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border-2 border-gray-50 p-6 overflow-hidden flex flex-col">
+                    <h3 class="text-xl font-bold mb-4"><i class="fas fa-list text-indigo-500 mr-2"></i> Verbetes Cadastrados (<span id="admin-count">0</span>)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-sm">
+                                    <th class="p-3 rounded-tl-lg">Ícone</th>
+                                    <th class="p-3">Título</th>
+                                    <th class="p-3">Categoria</th>
+                                    <th class="p-3 rounded-tr-lg text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body" class="divide-y divide-gray-100">
+                                <!-- Injetado pelo JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAIS E POPUPS -->
+    <!-- Modal do Verbete Completo -->
+    <div id="modal-verbete" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4 transition-opacity">
+        <div class="glass-modal rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-fadeIn">
+            <button onclick="window.closeModal('modal-verbete')" class="absolute top-4 right-5 text-gray-400 hover:text-red-500 transition text-2xl z-10">
+                <i class="fas fa-times-circle"></i>
+            </button>
+            <div id="modal-verbete-content">
+                <!-- Injetado pelo JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="modal-delete" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+            <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">Excluir Verbete?</h3>
+            <p class="text-gray-500 mb-6">Esta ação não pode ser desfeita. Tem certeza?</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="window.closeModal('modal-delete')" class="px-5 py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300">Cancelar</button>
+                <button id="btn-confirm-delete" class="px-5 py-2 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600 shadow-md">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA DO APLICATIVO -->
+    <script type="module">
+        // Importações do Firebase (Agora incluindo autenticação do Google)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================================
+        // CONFIGURAÇÕES DE SEGURANÇA (LISTA VIP)
+        // =========================================================================
+        const allowedEmails = [
+            'diego.gatto@servidor.educacao.sp.gov.br',
+            'mariangela.rocha@servidor.educacao.sp.gov.br',
+            'roberto.rocha01@servidor.educacao.sp.gov.br',
+            'paulo.gumiero@servidor.educacao.sp.gov.br',
+            'sirlene.verginio@servidor.educacao.sp.gov.br',
+            'marina.gomes02@servidor.educacao.sp.gov.br',
+            'rodrigo.ferreira02@servidor.educacao.sp.gov.br'
+        ];
+
+        // =========================================================================
+        // ATENÇÃO: PARA O SEU SITE OFICIAL, SUBSTITUA ESTE BLOCO PELO SEU CÓDIGO
+        // =========================================================================
+        const getFirebaseConfig = () => {
+            if (typeof __firebase_config !== 'undefined') {
+                return JSON.parse(__firebase_config);
+            }
+            return {
+                apiKey: "AIzaSyB0m6Wz0uFJsAjxHpXLZY54r9qbrj2Guss",
+                authDomain: "robopedia2.firebaseapp.com",
+                projectId: "robopedia2",
+                storageBucket: "robopedia2.firebasestorage.app",
+                messagingSenderId: "47459295505",
+                appId: "1:47459295505:web:f6cc763a9383dcdf04acb0"
+            };
+        };
+
+        const app = initializeApp(getFirebaseConfig());
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'robopedia-app';
+
+        // Estado Global da Aplicação
+        const state = {
+            verbetes: [],
+            filterCategory: 'Todas',
+            searchQuery: '',
+            sortOrder: 'random',
+            editingId: null,
+            deleteIdPending: null
+        };
+
+        const categories = ['Todas', 'Hardware', 'Software', 'Eletrônica', 'Mecânica', 'Curiosidades', 'Outros'];
+
+        // =========================================================================
+        // INICIALIZAÇÃO E AUTENTICAÇÃO
+        // =========================================================================
+        const initAuth = async () => {
+            try {
+                // Inicia como anônimo para que o público em geral possa ver os cards
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Erro na autenticação inicial:", error);
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setupDatabaseListener();
+            } else {
+                // Se não tiver usuário nenhum (nem anônimo), tenta logar anônimo de novo
+                initAuth();
+            }
+            renderApp(); // Re-renderiza a tela para verificar permissões de admin
+        });
+
+        // Função para Login do Admin (Chamada pelo botão)
+        window.loginAdmin = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                const userEmail = result.user.email;
+                
+                if (allowedEmails.includes(userEmail)) {
+                    showToast(`Bem-vindo, ${result.user.displayName || 'Admin'}!`, "success");
+                    renderApp();
+                } else {
+                    // E-mail não está na lista!
+                    showToast(`Acesso Negado para: ${userEmail}. Você não tem permissão.`, "error");
+                    await signOut(auth); // Desloga o penetra
+                    await signInAnonymously(auth); // Volta a ser anônimo
+                }
+            } catch (error) {
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    showToast("Erro ao fazer login: " + error.message, "error");
+                }
+            }
+        };
+
+        // Função para Deslogar o Admin
+        window.logoutAdmin = async () => {
+            await signOut(auth);
+            await signInAnonymously(auth);
+            window.location.hash = ''; // Redireciona para a home
+            showToast("Você saiu do painel de administração.", "success");
+        };
+
+        function setupDatabaseListener() {
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia');
+            
+            onSnapshot(colRef, (snapshot) => {
+                state.verbetes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderApp();
+            }, (error) => {
+                console.error("Erro ao carregar banco de dados.", error);
+            });
+        }
+
+        // =========================================================================
+        // FUNÇÕES UTILITÁRIAS
+        // =========================================================================
+        const escapeHTML = (str) => {
+            return str ? String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag)) : '';
+        };
+
+        const showToast = (message, type = 'success') => {
+            const toast = document.createElement('div');
+            toast.className = `px-5 py-3 rounded-xl shadow-xl text-white font-medium text-sm flex items-center transition-all duration-300 transform translate-y-0 opacity-100 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i> ${escapeHTML(message)}`;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        const renderMedia = (url) => {
+            if (!url) return '';
+            const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            if (ytMatch && ytMatch[1]) {
+                return `<iframe class="w-full aspect-video rounded-xl shadow-inner mt-4 mb-2 border border-gray-100" src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            }
+            return `<img src="${escapeHTML(url)}" class="w-full h-auto max-h-64 object-cover rounded-xl mt-4 mb-2 shadow-sm border border-gray-100" alt="Mídia">`;
+        };
+
+        // =========================================================================
+        // LÓGICA DE INTERFACE (UI)
+        // =========================================================================
+        function renderApp() {
+            const isAdminView = window.location.hash === '#admin';
+            
+            document.getElementById('view-public').classList.toggle('hide', isAdminView);
+            document.getElementById('view-admin').classList.toggle('hide', !isAdminView);
+
+            if (isAdminView) {
+                // Lógica de proteção da área de Admin
+                const user = auth.currentUser;
+                const isAuthorized = user && user.email && allowedEmails.includes(user.email);
+                
+                if (isAuthorized) {
+                    // É admin VIP
+                    document.getElementById('admin-login').classList.add('hide');
+                    document.getElementById('admin-dashboard').classList.remove('hide');
+                    renderAdminTable();
+                } else {
+                    // Não está logado ou não tem permissão
+                    document.getElementById('admin-login').classList.remove('hide');
+                    document.getElementById('admin-dashboard').classList.add('hide');
+                }
+            } else {
+                renderFilters();
+                renderCards();
+            }
+        }
+
+        // --- PUBLIC VIEW ---
+        function renderFilters() {
+            const container = document.getElementById('filters-container');
+            container.innerHTML = categories.map(cat => {
+                const isActive = state.filterCategory === cat;
+                const baseClass = "px-4 py-2 rounded-full text-sm font-bold border-2 transition-all cursor-pointer";
+                const activeClass = isActive ? "bg-indigo-600 border-indigo-600 text-white shadow-md" : "bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600";
+                return `<button onclick="window.setFilter('${cat}')" class="${baseClass} ${activeClass}">${cat}</button>`;
+            }).join('');
+            
+            const btnRandom = document.getElementById('btn-sort-random');
+            const btnAZ = document.getElementById('btn-sort-az');
+            
+            if(state.sortOrder === 'random') {
+                btnRandom.className = "px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md font-semibold text-sm transition";
+                btnAZ.className = "px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-semibold text-sm transition";
+            } else {
+                btnRandom.className = "px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-semibold text-sm transition";
+                btnAZ.className = "px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md font-semibold text-sm transition";
+            }
+        }
+
+        function getFilteredAndSorted() {
+            let list = [...state.verbetes];
+            
+            if (state.filterCategory !== 'Todas') {
+                list = list.filter(v => v.category === state.filterCategory);
+            }
+            
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                list = list.filter(v => v.title.toLowerCase().includes(q) || v.summary.toLowerCase().includes(q));
+            }
+            
+            if (state.sortOrder === 'az') {
+                list.sort((a, b) => a.title.localeCompare(b.title));
+            } else {
+                list.sort((a, b) => a.id.localeCompare(b.id)); 
+            }
+            return list;
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            const emptyState = document.getElementById('empty-state');
+            const list = getFilteredAndSorted();
+            
+            if (list.length === 0) {
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = list.map(v => {
+                const colorClass = `cat-${v.category}` || 'cat-Outros';
+                return `
+                <div class="bg-white rounded-2xl border-2 p-5 cursor-pointer transform hover:-translate-y-2 hover:shadow-xl transition-all duration-300 ${colorClass} flex flex-col h-full" onclick="window.openVerbete('${v.id}')">
+                    <div class="text-5xl mb-4 bg-white bg-opacity-60 w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm">${escapeHTML(v.icon)}</div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900 leading-tight">${escapeHTML(v.title)}</h3>
+                    <div class="mb-3">
+                        <span class="inline-block px-2 py-1 bg-white bg-opacity-70 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm">${escapeHTML(v.category)}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 opacity-90 line-clamp-3 mt-auto">${escapeHTML(v.summary)}</p>
+                </div>`;
+            }).join('');
+        }
+
+        // --- ADMIN VIEW ---
+        function renderAdminTable() {
+            const tbody = document.getElementById('admin-table-body');
+            document.getElementById('admin-count').textContent = state.verbetes.length;
+            
+            if (state.verbetes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum verbete cadastrado ainda.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = state.verbetes.map(v => `
+                <tr class="hover:bg-indigo-50 transition border-b border-gray-50 last:border-0">
+                    <td class="p-3 text-2xl text-center w-16">${escapeHTML(v.icon)}</td>
+                    <td class="p-3 font-semibold text-gray-800">${escapeHTML(v.title)}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold uppercase">${escapeHTML(v.category)}</span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="window.editVerbete('${v.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg mr-2 transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.confirmDelete('${v.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // =========================================================================
+        // AÇÕES EXPOSTAS AO WINDOW (Para o HTML conseguir chamar)
+        // =========================================================================
+        window.setFilter = (cat) => {
+            state.filterCategory = cat;
+            renderApp();
+        };
+
+        window.setSort = (order) => {
+            state.sortOrder = order;
+            renderApp();
+        };
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            state.searchQuery = e.target.value;
+            renderApp();
+        });
+
+        window.addEventListener('hashchange', renderApp);
+
+        // Modal de Visualização do Verbete
+        window.openVerbete = (id) => {
+            const v = state.verbetes.find(item => item.id === id);
+            if (!v) return;
+            
+            const colorClass = `cat-${v.category}` || 'cat-Outros';
+            
+            const html = `
+                <div class="p-8 sm:p-10 ${colorClass} rounded-t-3xl border-b border-opacity-20 border-black">
+                    <div class="flex items-start gap-6">
+                        <div class="text-6xl bg-white bg-opacity-70 w-24 h-24 rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0">${escapeHTML(v.icon)}</div>
+                        <div>
+                            <span class="inline-block px-3 py-1 bg-white bg-opacity-80 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm mb-3">${escapeHTML(v.category)}</span>
+                            <h2 class="text-3xl sm:text-4xl font-black text-gray-900 leading-tight mb-2">${escapeHTML(v.title)}</h2>
+                            <p class="text-lg font-medium opacity-90">${escapeHTML(v.summary)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-8 sm:p-10 bg-white rounded-b-3xl">
+                    ${renderMedia(v.mediaUrl)}
+                    
+                    <div class="mt-8">
+                        <h4 class="text-xl font-bold text-indigo-900 mb-3 flex items-center"><i class="fas fa-book-open text-indigo-500 mr-2"></i> O que é e como funciona?</h4>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg bg-indigo-50 p-5 rounded-2xl border border-indigo-100">${escapeHTML(v.explanation)}</p>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h4 class="text-xl font-bold text-green-900 mb-3 flex items-center"><i class="fas fa-lightbulb text-green-500 mr-2"></i> Exemplo Prático</h4>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg bg-green-50 p-5 rounded-2xl border border-green-100">${escapeHTML(v.practicalExample)}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modal-verbete-content').innerHTML = html;
+            document.getElementById('modal-verbete').classList.remove('hide');
+        };
+
+        window.closeModal = (modalId) => {
+            document.getElementById(modalId).classList.add('hide');
+        };
+
+        // --- FUNÇÕES CRUD ADMIN ---
+        document.getElementById('admin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Segurança extra: Confere se não foi deslogado misteriosamente
+            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) {
+                showToast("Erro: Você não tem permissão para salvar.", "error");
+                return;
+            }
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            btn.disabled = true;
+
+            const verbeteData = {
+                title: document.getElementById('form-title').value,
+                category: document.getElementById('form-category').value,
+                icon: document.getElementById('form-icon').value,
+                summary: document.getElementById('form-summary').value,
+                mediaUrl: document.getElementById('form-media').value,
+                explanation: document.getElementById('form-explanation').value,
+                practicalExample: document.getElementById('form-example').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia');
+                if (state.editingId) {
+                    await updateDoc(doc(colRef, state.editingId), verbeteData);
+                    showToast('Verbete atualizado com sucesso!');
+                } else {
+                    verbeteData.createdAt = new Date().toISOString();
+                    await addDoc(colRef, verbeteData);
+                    showToast('Novo verbete cadastrado!');
+                }
+                window.resetForm();
+            } catch (error) {
+                showToast('Erro ao salvar: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = 'Salvar Verbete';
+                btn.disabled = false;
+            }
+        });
+
+        window.editVerbete = (id) => {
+            const v = state.verbetes.find(item => item.id === id);
+            if (!v) return;
+
+            state.editingId = id;
+            document.getElementById('form-title-display').innerHTML = `<i class="fas fa-edit text-blue-500 mr-2"></i> Editando: ${escapeHTML(v.title)}`;
+            
+            document.getElementById('form-title').value = v.title || '';
+            document.getElementById('form-category').value = v.category || 'Outros';
+            document.getElementById('form-icon').value = v.icon || '';
+            document.getElementById('form-summary').value = v.summary || '';
+            document.getElementById('form-media').value = v.mediaUrl || '';
+            document.getElementById('form-explanation').value = v.explanation || '';
+            document.getElementById('form-example').value = v.practicalExample || '';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetForm = () => {
+            state.editingId = null;
+            document.getElementById('admin-form').reset();
+            document.getElementById('form-title-display').innerHTML = `<i class="fas fa-plus-circle text-green-500 mr-2"></i> Novo Verbete`;
+        };
+
+        window.confirmDelete = (id) => {
+            state.deleteIdPending = id;
+            document.getElementById('modal-delete').classList.remove('hide');
+        };
+
+        document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+            if (!state.deleteIdPending) return;
+            
+            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) {
+                showToast("Erro: Você não tem permissão para deletar.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btn-confirm-delete');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'robopedia', state.deleteIdPending);
+                await deleteDoc(docRef);
+                showToast('Verbete excluído com sucesso!');
+                window.closeModal('modal-delete');
+            } catch (error) {
+                showToast('Erro ao excluir: ' + error.message, 'error');
+            } finally {
+                btn.innerHTML = 'Sim, Excluir';
+                btn.disabled = false;
+                state.deleteIdPending = null;
+            }
+        });
+
+        initAuth();
+        renderApp();
+    </script>
+</body>
+</html>
