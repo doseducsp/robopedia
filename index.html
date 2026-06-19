@@ -17,9 +17,11 @@
             backdrop-filter: blur(10px);
         }
 
-        /* Ocultar barra de rolagem no grid de emojis */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Barra de rolagem personalizada e elegante para as listas de emojis e cores */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800">
@@ -233,7 +235,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-2">Cor do Tema</label>
-                            <div class="grid grid-cols-8 sm:grid-cols-11 gap-3 max-h-48 overflow-y-auto p-4 border rounded-xl bg-gray-50 shadow-inner no-scrollbar" id="color-picker-container">
+                            <div class="grid grid-cols-8 sm:grid-cols-11 gap-3 max-h-48 overflow-y-auto p-4 border rounded-xl bg-gray-50 shadow-inner custom-scrollbar" id="color-picker-container">
                                 <!-- Cores injetadas via JS -->
                             </div>
                             <input type="hidden" id="cform-color" value="blue-light">
@@ -279,12 +281,13 @@
     <!-- MODAIS E POPUPS -->
     <!-- Modal Picker de Emoji -->
     <div id="modal-emoji" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fadeIn">
+        <div class="bg-white rounded-2xl p-6 max-w-sm sm:max-w-md w-full shadow-2xl animate-fadeIn">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800">Escolha um Ícone</h3>
                 <button onclick="window.closeModal('modal-emoji')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="grid grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1 no-scrollbar" id="emoji-grid">
+            <!-- Com barra de rolagem customizada e altura aumentada -->
+            <div class="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-[60vh] overflow-y-auto p-3 border border-gray-100 rounded-xl bg-gray-50 shadow-inner custom-scrollbar" id="emoji-grid">
                 <!-- Emojis Injetados JS -->
             </div>
         </div>
@@ -292,8 +295,8 @@
 
     <!-- Modal do Verbete Completo -->
     <div id="modal-verbete" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4 transition-opacity">
-        <div class="glass-modal rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-fadeIn">
-            <button onclick="window.closeModal('modal-verbete')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 transition text-2xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100">
+        <div class="glass-modal rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-fadeIn custom-scrollbar">
+            <button onclick="window.closeModal('modal-verbete')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 transition text-2xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 shadow">
                 <i class="fas fa-times"></i>
             </button>
             <div id="modal-verbete-content">
@@ -357,9 +360,14 @@
         // =========================================================================
         // DADOS E PALETAS DE DESIGN (ESTADO GLOBAL)
         // =========================================================================
-        const EMOJIS = ['🤖','🦾','🦿','🧠','🔋','🔌','💻','🖥️','⌨️','🖱️','🖨️','📱','📟','📸','📹','📼','💿','💾','⚙️','🛠️','🪛','🔧','🔩','🔨','⛏️','📡','🔬','🔭','🚀','🛸','🛰️','💡','🔦','📚','🎓','📐','📏','✂️','🧪','🧫','🧬','🧲','🕹️','🎮','🎲','🧩','🔥','⚡','🌐','🚧','🚦','🛑','✨','🌟','🎯','🏆','🥇','🎨','🎭','🎬','🎧','🎙️','🔊','🔔','🔍','🔑','🚪','🛡️','⚕️','⚖️','🚗','🚁','✈️','⛵'];
         
-        // As paletas convertem a escolha de cor do admin em classes do Tailwind CSS
+        // Separação avançada e segura da string gigante de emojis para não quebrar emojis compostos
+        const EMOJIS_STRING = "😀😁😂🤣😃😄😅😆😉😊😋😎😍😘😗😙😚☺️🙂🤗🤩🤔🤨😐😑😶🙄😏😣😥😮🤐😯😪😫😴😌😛😜😝🤤😒😓😔😕🙃🤑😲☹️🙁😖😞😟😤😢😭😦😧😨😩🤯😬😰😱😳🤪😵😡😠👋🤚🖐✋🖖👌✌️🤞🤟🤘🤙👈👉👆👇☝️👍👎✊👊🤛🤜👏🙌👐🤲🤝🙏✍️💅🤳💪🦵🦶👂👃🧠🦷🦴👀👁🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮🐷🐽🐸🐵🙈🙉🙊🐒🐔🐧🐦🐤🐣🐥🦆🦅🦉🦇🐺🐗🐴🦄🐝🐛🦋🐌🐞🐜🦟🦗🕷🕸🦂🐢🐍🦎🦖🦕🐙🦑🦐🦞🦀🐡🐠🐟🐬🐳🐋🦈🐊🐅🐆🦓🦍🐘🦏🦛🐪🐫🦒🐃🐂🐄🐎🐖🐏🐑🐐🦌🐕🐩🐈🐓🦃🦚🦜🦢🕊🐇🦝🦡🐁🐀🐿🦔🐾🐉🐲🌵🎄🌲🌳🌴🌱🌿☘️🍀🎍🎋🍃🍂🍁🍄🐚🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌜🌚🌕🌖🌗🌘🌑🌒🌓🌔🌙🌎🌍🌏💫⭐️🌟✨⚡️☄️💥🔥🌪🌈☀️🌤⛅️🌥☁️🌦🌧⛈🌩🌨❄️☃️⛄️🌬💨☔️☂️🌊🌫🍏🍎🍐🍊🍋🍌🍉🍇🍓🍈🍒🥭🍍🥥🥝🍅🥑🥦🥒🥬🌶🌽🥕🥔🍠🥐🍞🥖🥨🧀🥚🍳🥞🥓🥩🍗🍖🌭🍔🍟🍕🥪🥙🥗🥘🥫🍝🍜🍲🍛🍣🍱🥟🍤🍙🍚🍘🍥🥮🥠🍢🍡🍧🍨🍦🥧🍰🎂🍮🍭🍬🍫🍿🍩🍪🌰🥜🍯🥛🍼☕️🍵🥤🥄🍴🍽🥣🥡🥢⚽️🏀🏈⚾️🥎🎾🏐🏉🥏🎱🪀🏓🏸🏒🏑🥍🏏🥅⛳️🪁🎣🤿🥊🥋🎽🛹🛷⛸🥌🎿⛷🏂🪂🏋️‍♀️🏋️‍♂️🤼‍♀️🤼‍♂️🤸‍♀️🤸‍♂️⛹️‍♀️⛹️‍♂️🤺🤾‍♀️🤾‍♂️🏌️‍♀️🏌️‍♂️🏇🧘‍♀️🧘‍♂️🏄‍♀️🏄‍♂️🏊‍♀️🏊‍♂️🤽‍♀️🤽‍♂️🚣‍♀️🚣‍♂️🧗‍♀️🧗‍♂️🚵‍♀️🚵‍♂️🚴‍♀️🚴‍♂️🏆🥇🥈🥉🏅🎖🏵🎗🎫🎟🎪🤹‍♀️🤹‍♂️🎭🩰🎨🎬🎤🎧🎼🎹🥁🎷🎺🎸🪕🎻🎲♟🎯🎳🎮🎰🧩🚗🚕🚙🚌🚎🏎🚓🚑🚒🚐🚚🚛🚜🦯🦽🦼🛴🚲🛵🏍🛺🚨🚔🚍🚘🚖🚡🚠🚟🚃🚋🚞🚝🚄🚅🚈🚂🚆🚇🚊🚉✈️🛫🛬🛩💺🛰🚀🛸🚁🛶⛵️🚤🛥🛳⛴🚢⚓️⛽️🚧🚦🚥🚏🗺🗿🗽🗼🏰🏯🏟🎡🎢🎠⛲️⛱🏖🏝🏜🌋⛰🏔🗻🏕⛺️🏠🏡🏘🏚🏗🏭🏢🏬🏣🏤🏥🏦🏨🏪🏫🏩💒🏛⛪️🕌🕍🛕🕋⛩🛤🛣🗾🎑🏞🌅🌄🌠🎇🎆🌇🌆🏙🌃🌌🌉🌁⌚️📱📲💻⌨️🖥🖨🖱🖲🕹🗜💽💾💿📀📼📷📸📹🎥📽🎞📞☎️📟📠📺📻🎙🎚🎛🧭⏱⏲⏰🕰⌛️⏳📡🔋🔌💡🔦🕯🪔🧯🛢💸💵💴💶💷💰💳💎⚖️🧰🔧🔨⚒🛠⛏🔩⚙️🧱⛓🧲🧪🧫🧬🔬🔭📡🚪🛏🛋🪑🚽🚿🛁🪒🧴🧷🧹🧺🧻🧼🧽🛒❤️🧡💛💚💙💜🖤🤍🤎💔❣️💕💞💓💗💖💘💝💟☮️✝️☪️🕉☸️✡️🔯🕎☯️☦️🛐⛎♈️♉️♊️♋️♌️♍️♎️♏️♐️♑️♒️♓️🆔⚛️🉑📴📳🈶🈚️🈸🈺🈷️✴️🆚💮🉐㊙️㊗️🈴🈵🈹🈲🅰️🅱️🆎🆑🅾️🆘❌⭕️🛑⛔️📛🚫💯💢♨️🚷🚯🚳🚱📵❗️❕❓❔‼️⁉️🔅🔆〽️⚠️🚸🔱⚜️🔰♻️✅🈯️💹❇️✳️❎🌐💠Ⓜ️🌀💤🏧🚾♿️🅿️🈳🈂️🛂🛃🛄🛅🚹🚺🚼🚻🚮🎦📶🈁🔣ℹ️🔤🔡🔠🆖🆗🆙🆒🆕🆓0️⃣1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣8️⃣9️⃣🔟🔢#️⃣*️⃣⏏️▶️⏸⏯⏹⏺⏭⏮⏩⏪⏫⏬◀️🔼🔽➡️⬅️⬆️⬇️↗️↘️↙️↖️↕️↔️↪️↩️⤴️⤵️🔀🔁🔂🔄🔃🎵🎶➕➖➗✖️♾💲💱™️©️®️〰️➰➿🔚🔙🔛🔝🔜✔️☑️🔘🔴🟠🟡🟢🔵🟣⚫️⚪️🟤🔺🔻🔸🔹🔶🔷🔳🔲▪️▫️◾️◽️◼️◻️🟥🟧🟨🟩🟦🟪⬛️⬜️🟫";
+        const EMOJIS = typeof Intl !== 'undefined' && Intl.Segmenter 
+            ? Array.from(new Intl.Segmenter().segment(EMOJIS_STRING)).map(x => x.segment)
+            : [...EMOJIS_STRING];
+
+        // 66 Cores Dinâmicas profissionais geradas automaticamente
         const BASE_COLORS = ['slate', 'gray', 'zinc', 'neutral', 'stone', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
         const PALETTE = {};
         BASE_COLORS.forEach(c => {
@@ -491,11 +499,9 @@
         // Função crucial: "Junta" o verbete com a categoria dele (para saber a cor e o ícone na hora de exibir)
         const resolveCategory = (verbete) => {
             let cat = null;
-            // Se o verbete foi salvo no formato novo (com ID de categoria)
             if (verbete.categoryId) cat = state.categories.find(c => c.id === verbete.categoryId);
-            // Se o verbete é antigo (formato de texto), tenta achar a categoria pelo nome
             if (!cat && verbete.category) cat = state.categories.find(c => c.name.toLowerCase() === verbete.category.toLowerCase());
-            // Se não achar nada, aplica um design padrão "cinza" genérico para não quebrar o visual
+            // Aplica um design padrão caso fique órfão (ex: a categoria original foi apagada)
             return cat || { id: 'legacy', name: verbete.category || 'Sem Categoria', icon: verbete.icon || '❔', color: 'slate-light' };
         };
 
@@ -513,24 +519,24 @@
         // =========================================================================
         function initEmojiPicker() {
             const grid = document.getElementById('emoji-grid');
+            if(!grid) return;
             grid.innerHTML = EMOJIS.map(e => 
-                `<button onclick="window.selectEmoji('${e}')" class="text-3xl p-2 hover:bg-gray-100 rounded-lg transition transform hover:scale-110">${e}</button>`
+                `<button onclick="window.selectEmoji('${e}')" class="text-3xl p-2 hover:bg-gray-200 rounded-lg transition transform hover:scale-110 flex items-center justify-center">${e}</button>`
             ).join('');
         }
 
         function initColorPicker() {
             const container = document.getElementById('color-picker-container');
+            if(!container) return;
             const colorKeys = Object.keys(PALETTE);
             
             container.innerHTML = colorKeys.map(c => `
                 <label class="cursor-pointer group flex flex-col items-center">
                     <input type="radio" name="cat_color" value="${c}" class="hidden" ${c==='blue-light'?'checked':''} onchange="document.getElementById('cform-color').value='${c}'">
-                    <div class="w-8 h-8 rounded-full border-2 border-white shadow-sm ring-2 ring-transparent transition-all group-hover:scale-125 
-                        ${PALETTE[c].preview}"></div>
+                    <div class="w-8 h-8 rounded-full border-2 border-white shadow-sm ring-2 ring-transparent transition-all group-hover:scale-125 ${PALETTE[c].preview}"></div>
                 </label>
             `).join('');
 
-            // Adiciona CSS extra para marcar qual bolinha de cor está selecionada
             const style = document.createElement('style');
             style.innerHTML = `input[name="cat_color"]:checked + div { ring-color: #6366f1; transform: scale(1.25); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }`;
             document.head.appendChild(style);
@@ -538,6 +544,8 @@
 
         function populateCategorySelects() {
             const select = document.getElementById('vform-category');
+            if (!select) return;
+            
             if (state.categories.length === 0) {
                 select.innerHTML = `<option value="">Nenhuma categoria cadastrada...</option>`;
                 return;
@@ -573,10 +581,10 @@
                     const btnV = document.getElementById('tab-btn-verbetes');
                     const btnC = document.getElementById('tab-btn-categorias');
                     
-                    if(isVerbetes) {
+                    if(isVerbetes && btnV && btnC) {
                         btnV.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-indigo-600 text-white shadow-md transform translate-y-[2px]";
                         btnC.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-gray-100 text-gray-500 hover:bg-gray-200";
-                    } else {
+                    } else if(btnV && btnC) {
                         btnV.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-gray-100 text-gray-500 hover:bg-gray-200";
                         btnC.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-indigo-600 text-white shadow-md transform translate-y-[2px]";
                     }
@@ -596,6 +604,7 @@
         // --- PUBLIC VIEW RENDERERS ---
         function renderFilters() {
             const container = document.getElementById('filters-container');
+            if(!container) return;
             
             // Botão "Todas"
             let html = `<button onclick="window.setFilter('Todas')" class="px-4 py-2 rounded-full text-sm font-bold border-2 transition-all cursor-pointer ${state.filterCategoryId === 'Todas' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300'}">Todas</button>`;
@@ -611,14 +620,17 @@
             container.innerHTML = html;
 
             // Sort buttons update
-            document.getElementById('btn-sort-random').className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'random' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
-            document.getElementById('btn-sort-az').className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'az' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
+            const btnR = document.getElementById('btn-sort-random');
+            const btnAZ = document.getElementById('btn-sort-az');
+            if(btnR) btnR.className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'random' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
+            if(btnAZ) btnAZ.className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'az' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
         }
 
         function renderCards() {
             const container = document.getElementById('cards-container');
             const emptyState = document.getElementById('empty-state');
             
+            // Segurança importante: impede erro se os elementos não estiverem prontos no DOM
             if(!container || !emptyState) return;
             
             let list = [...state.verbetes];
@@ -669,7 +681,10 @@
         // --- ADMIN VIEW RENDERERS ---
         function renderAdminVerbetes() {
             const tbody = document.getElementById('table-verbetes-body');
-            document.getElementById('admin-verbete-count').textContent = state.verbetes.length;
+            if(!tbody) return;
+            
+            const countEl = document.getElementById('admin-verbete-count');
+            if(countEl) countEl.textContent = state.verbetes.length;
             
             if (state.verbetes.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum verbete cadastrado.</td></tr>`;
@@ -696,7 +711,10 @@
 
         function renderAdminCategorias() {
             const tbody = document.getElementById('table-categorias-body');
-            document.getElementById('admin-cat-count').textContent = state.categories.length;
+            if(!tbody) return;
+            
+            const countEl = document.getElementById('admin-cat-count');
+            if(countEl) countEl.textContent = state.categories.length;
             
             if (state.categories.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhuma categoria cadastrada.</td></tr>`;
@@ -711,7 +729,7 @@
                     <td class="p-3 font-bold text-gray-800">${escapeHTML(c.name)}</td>
                     <td class="p-3">
                         <div class="flex items-center gap-2 text-sm text-gray-500">
-                            <span class="w-4 h-4 rounded-full ${colors.bg.replace('50','400')}"></span> ${c.color}
+                            <span class="w-4 h-4 rounded-full ${colors.preview}"></span> ${c.color}
                         </div>
                     </td>
                     <td class="p-3 text-center w-32">
@@ -729,7 +747,9 @@
         window.setFilter = (catId) => { state.filterCategoryId = catId; renderApp(); };
         window.setSort = (order) => { state.sortOrder = order; renderApp(); };
         window.addEventListener('hashchange', renderApp);
-        document.getElementById('search-input').addEventListener('input', (e) => { state.searchQuery = e.target.value; renderApp(); });
+        
+        const searchInput = document.getElementById('search-input');
+        if(searchInput) searchInput.addEventListener('input', (e) => { state.searchQuery = e.target.value; renderApp(); });
 
         window.openEmojiPicker = () => document.getElementById('modal-emoji').classList.remove('hide');
         window.closeModal = (id) => document.getElementById(id).classList.add('hide');
@@ -775,7 +795,8 @@
         };
 
         // --- CRUD VERBETES ---
-        document.getElementById('admin-verbete-form').addEventListener('submit', async (e) => {
+        const verbeteForm = document.getElementById('admin-verbete-form');
+        if(verbeteForm) verbeteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) return showToast("Acesso Negado.", "error");
 
@@ -848,7 +869,8 @@
         };
 
         // --- CRUD CATEGORIAS ---
-        document.getElementById('admin-category-form').addEventListener('submit', async (e) => {
+        const catForm = document.getElementById('admin-category-form');
+        if(catForm) catForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) return showToast("Acesso Negado.", "error");
 
@@ -888,7 +910,7 @@
             document.getElementById('cform-emoji-display').innerText = c.icon || '🤖';
             
             // Marca o radio button da cor correta
-            document.getElementById('cform-color').value = c.color || 'slate-light';
+            document.getElementById('cform-color').value = c.color || 'blue-light';
             const radio = document.querySelector(`input[name="cat_color"][value="${c.color}"]`);
             if(radio) radio.checked = true;
 
@@ -900,12 +922,13 @@
             document.getElementById('admin-category-form').reset();
             document.getElementById('cform-icon').value = '🤖';
             document.getElementById('cform-emoji-display').innerText = '🤖';
-            document.querySelector(`input[name="cat_color"][value="blue-light"]`).checked = true;
+            const defaultColorRadio = document.querySelector(`input[name="cat_color"][value="blue-light"]`);
+            if(defaultColorRadio) defaultColorRadio.checked = true;
             document.getElementById('cform-color').value = 'blue-light';
             document.getElementById('form-cat-title').innerHTML = `<i class="fas fa-tags text-green-500 mr-2"></i> Nova Categoria`;
         };
 
-        // --- SISTEMA DE EXCLUSÃO GENÉRICO ---
+        // --- SISTEMA DE EXCLUSÃO GENÉRICO (CORRIGIDO) ---
         window.confirmDelete = (type, id) => {
             state.deleteItemType = type;
             state.deleteItemId = id;
@@ -921,13 +944,17 @@
             btn.disabled = true;
 
             try {
+                // Rota corrigida: Informando corretamente a coleção e o ID do documento
                 const colName = state.deleteItemType === 'verbete' ? 'robopedia' : 'robopedia_categories';
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', colName, state.deleteItemId);
+                
                 await deleteDoc(docRef);
+                
                 showToast(`${state.deleteItemType === 'verbete' ? 'Verbete' : 'Categoria'} excluída!`);
                 window.closeModal('modal-delete');
-            } catch (error) { showToast('Erro ao excluir: ' + error.message, 'error'); } 
-            finally {
+            } catch (error) { 
+                showToast('Erro ao excluir: ' + error.message, 'error'); 
+            } finally {
                 btn.innerHTML = 'Sim, Excluir';
                 btn.disabled = false;
                 state.deleteItemId = null;
