@@ -6,24 +6,20 @@
     <title>Robopédia - A Enciclopédia da Robótica</title>
     <!-- Carrega o Tailwind CSS para o design -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Ícones -->
+    <!-- Ícones FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Cores base para os cards dependendo da categoria */
-        .cat-Hardware { background-color: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
-        .cat-Software { background-color: #dcfce7; border-color: #86efac; color: #166534; }
-        .cat-Eletrônica { background-color: #fef08a; border-color: #fde047; color: #854d0e; }
-        .cat-Mecânica { background-color: #ffedd5; border-color: #fdba74; color: #9a3412; }
-        .cat-Curiosidades { background-color: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
-        .cat-Outros { background-color: #f3f4f6; border-color: #d1d5db; color: #374151; }
-        
         .hide { display: none !important; }
         
-        /* Efeito de vidro para o modal */
+        /* Efeito de vidro para os modais */
         .glass-modal {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
         }
+
+        /* Ocultar barra de rolagem no grid de emojis */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800">
@@ -34,7 +30,7 @@
             <a href="#" class="text-3xl font-black tracking-tight flex items-center hover:text-indigo-200 transition">
                 <i class="fas fa-robot mr-3 text-4xl"></i> Robopédia
             </a>
-            <!-- Link discreto para o admin (Funciona apenas se o usuário souber o caminho #admin) -->
+            <!-- Link discreto para o admin -->
             <a href="#admin" class="text-indigo-400 hover:text-white text-sm transition-colors" title="Área do Administrador">
                 <i class="fas fa-cog"></i>
             </a>
@@ -77,10 +73,12 @@
         <!-- Grade de Verbetes -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="cards-container">
             <!-- Cards injetados via JS -->
-            <div class="col-span-full text-center py-10 text-gray-400 hidden" id="empty-state">
-                <i class="fas fa-satellite-dish text-6xl mb-4"></i>
-                <p class="text-xl">Nenhum verbete encontrado.</p>
-            </div>
+        </div>
+        
+        <!-- Estado Vazio -->
+        <div class="w-full text-center py-10 text-gray-400 hidden" id="empty-state">
+            <i class="fas fa-satellite-dish text-6xl mb-4"></i>
+            <p class="text-xl">Nenhum verbete encontrado.</p>
         </div>
     </main>
 
@@ -101,89 +99,92 @@
             </div>
         </div>
 
-        <!-- DASHBOARD DO ADMIN (Apenas logados autorizados) -->
+        <!-- DASHBOARD DO ADMIN -->
         <div id="admin-dashboard" class="hide">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
                     <h2 class="text-3xl font-black text-gray-800"><i class="fas fa-cogs text-indigo-500 mr-2"></i> Painel de Controle</h2>
-                    <p class="text-gray-500">Cadastre, edite ou remova os termos da sua Robopédia.</p>
+                    <p class="text-gray-500">Cadastre categorias e verbetes da sua enciclopédia.</p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="window.logoutAdmin()" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-5 rounded-xl transition shadow-sm flex items-center">
                         <i class="fas fa-sign-out-alt mr-2"></i> Sair
                     </button>
                     <a href="#" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-5 rounded-xl transition shadow-sm flex items-center">
-                        <i class="fas fa-arrow-left mr-2"></i> Voltar à Enciclopédia
+                        <i class="fas fa-arrow-left mr-2"></i> Voltar à Robopédia
                     </a>
                 </div>
             </div>
+
+            <!-- NAVEGAÇÃO POR ABAS -->
+            <div class="flex border-b-2 border-gray-200 mb-6 gap-2">
+                <button onclick="window.setAdminTab('verbetes')" id="tab-btn-verbetes" class="px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-indigo-600 text-white shadow-md transform translate-y-[2px]">
+                    <i class="fas fa-book mr-2"></i> Verbetes
+                </button>
+                <button onclick="window.setAdminTab('categorias')" id="tab-btn-categorias" class="px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-gray-100 text-gray-500 hover:bg-gray-200">
+                    <i class="fas fa-tags mr-2"></i> Categorias
+                </button>
+            </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Formulário -->
+            <!-- SECÇÃO VERBETES -->
+            <div id="section-verbetes" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Formulário Verbete -->
                 <div class="bg-white rounded-2xl shadow-sm p-6 border-2 border-indigo-50 lg:sticky top-24 h-fit">
-                    <h3 class="text-xl font-bold mb-4 flex items-center" id="form-title-display">
+                    <h3 class="text-xl font-bold mb-4 flex items-center" id="form-verbete-title">
                         <i class="fas fa-plus-circle text-green-500 mr-2"></i> Novo Verbete
                     </h3>
-                    <form id="admin-form" class="space-y-4">
-                        <input type="hidden" id="form-id">
+                    <form id="admin-verbete-form" class="space-y-4">
+                        <input type="hidden" id="vform-id">
                         
-                        <div class="grid grid-cols-4 gap-2">
-                            <div class="col-span-1">
-                                <label class="block text-sm font-bold text-gray-700 mb-1">Ícone</label>
-                                <input type="text" id="form-icon" required placeholder="🤖" maxlength="2" class="w-full p-2 border rounded text-center text-xl bg-gray-50 focus:bg-white">
-                            </div>
-                            <div class="col-span-3">
-                                <label class="block text-sm font-bold text-gray-700 mb-1">Título do Verbete</label>
-                                <input type="text" id="form-title" required placeholder="Ex: Arduino Uno" class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
-                            </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Título do Verbete</label>
+                            <input type="text" id="vform-title" required placeholder="Ex: Arduino Uno" class="w-full p-2 border rounded bg-gray-50 focus:bg-white focus:border-indigo-500">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">Categoria</label>
-                            <select id="form-category" required class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
-                                <option value="Hardware">Hardware</option>
-                                <option value="Software">Software</option>
-                                <option value="Eletrônica">Eletrônica</option>
-                                <option value="Mecânica">Mecânica</option>
-                                <option value="Curiosidades">Curiosidades</option>
-                                <option value="Outros">Outros</option>
-                            </select>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Categoria (Seleciona a Cor e Ícone)</label>
+                            <div class="flex gap-2">
+                                <select id="vform-category" required class="w-full p-2 border rounded bg-gray-50 focus:bg-white focus:border-indigo-500">
+                                    <!-- Injetado via JS -->
+                                </select>
+                                <button type="button" onclick="window.setAdminTab('categorias')" class="bg-indigo-100 text-indigo-700 px-3 rounded font-bold hover:bg-indigo-200 transition" title="Criar Nova Categoria">+</button>
+                            </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Resumo Curto (Uma frase)</label>
-                            <input type="text" id="form-summary" required placeholder="Ex: Placa de prototipagem eletrônica..." maxlength="120" class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
+                            <input type="text" id="vform-summary" required placeholder="Ex: Placa de prototipagem eletrônica..." maxlength="120" class="w-full p-2 border rounded bg-gray-50 focus:bg-white">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">URL da Mídia (YouTube ou GIF/Imagem)</label>
-                            <input type="url" id="form-media" placeholder="Ex: https://youtube.com/watch?v=..." class="w-full p-2 border rounded bg-gray-50 focus:bg-white text-sm">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">URL da Mídia (YouTube ou Imagem)</label>
+                            <input type="url" id="vform-media" placeholder="Ex: https://youtube.com/watch?v=..." class="w-full p-2 border rounded bg-gray-50 focus:bg-white text-sm">
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">O que é / Como funciona?</label>
-                            <textarea id="form-explanation" required rows="3" class="w-full p-2 border rounded bg-gray-50 focus:bg-white"></textarea>
+                            <textarea id="vform-explanation" required rows="3" class="w-full p-2 border rounded bg-gray-50 focus:bg-white"></textarea>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Exemplo Prático Contextualizado</label>
-                            <textarea id="form-example" required rows="2" class="w-full p-2 border rounded bg-gray-50 focus:bg-white" placeholder="Ex: Usado para piscar um LED ou controlar um robô carrinho..."></textarea>
+                            <textarea id="vform-example" required rows="2" class="w-full p-2 border rounded bg-gray-50 focus:bg-white" placeholder="Ex: Usado para piscar um LED..."></textarea>
                         </div>
 
                         <div class="flex gap-2 pt-2">
                             <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow transition">
                                 Salvar Verbete
                             </button>
-                            <button type="button" onclick="window.resetForm()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl transition">
+                            <button type="button" onclick="window.resetVerbeteForm()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl transition">
                                 Cancelar
                             </button>
                         </div>
                     </form>
                 </div>
                 
-                <!-- Tabela de Cadastrados -->
+                <!-- Tabela Verbetes -->
                 <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border-2 border-gray-50 p-6 overflow-hidden flex flex-col">
-                    <h3 class="text-xl font-bold mb-4"><i class="fas fa-list text-indigo-500 mr-2"></i> Verbetes Cadastrados (<span id="admin-count">0</span>)</h3>
+                    <h3 class="text-xl font-bold mb-4"><i class="fas fa-list text-indigo-500 mr-2"></i> Verbetes Cadastrados (<span id="admin-verbete-count">0</span>)</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -194,10 +195,81 @@
                                     <th class="p-3 rounded-tr-lg text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-table-body" class="divide-y divide-gray-100">
+                            <tbody id="table-verbetes-body" class="divide-y divide-gray-100">
                                 <!-- Injetado pelo JS -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECÇÃO CATEGORIAS -->
+            <div id="section-categorias" class="grid grid-cols-1 lg:grid-cols-3 gap-8 hide">
+                <!-- Formulário Categoria -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border-2 border-indigo-50 lg:sticky top-24 h-fit">
+                    <h3 class="text-xl font-bold mb-4 flex items-center" id="form-cat-title">
+                        <i class="fas fa-tags text-green-500 mr-2"></i> Nova Categoria
+                    </h3>
+                    <form id="admin-category-form" class="space-y-5">
+                        <input type="hidden" id="cform-id">
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Nome da Categoria</label>
+                            <input type="text" id="cform-name" required placeholder="Ex: Sensores" class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-indigo-500 font-bold">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Ícone (Emoji)</label>
+                            <div class="flex items-center gap-3">
+                                <div id="cform-emoji-display" class="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center text-3xl shadow-inner cursor-pointer hover:bg-gray-200 transition" onclick="window.openEmojiPicker()">
+                                    🤖
+                                </div>
+                                <input type="hidden" id="cform-icon" value="🤖">
+                                <button type="button" onclick="window.openEmojiPicker()" class="bg-white border-2 border-gray-200 hover:border-indigo-400 text-gray-600 px-4 py-2 rounded-lg font-bold text-sm transition">
+                                    Mudar Ícone
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Cor do Tema</label>
+                            <div class="grid grid-cols-4 gap-3" id="color-picker-container">
+                                <!-- Cores injetadas via JS -->
+                            </div>
+                            <input type="hidden" id="cform-color" value="blue">
+                        </div>
+
+                        <div class="flex gap-2 pt-4">
+                            <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow transition">
+                                Salvar Categoria
+                            </button>
+                            <button type="button" onclick="window.resetCategoryForm()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl transition">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Tabela Categorias -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border-2 border-gray-50 p-6 overflow-hidden flex flex-col">
+                    <h3 class="text-xl font-bold mb-4"><i class="fas fa-list text-indigo-500 mr-2"></i> Categorias Cadastradas (<span id="admin-cat-count">0</span>)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-sm">
+                                    <th class="p-3 rounded-tl-lg">Ícone</th>
+                                    <th class="p-3">Nome</th>
+                                    <th class="p-3">Cor</th>
+                                    <th class="p-3 rounded-tr-lg text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-categorias-body" class="divide-y divide-gray-100">
+                                <!-- Injetado pelo JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 p-4 bg-yellow-50 text-yellow-800 rounded-lg text-sm border border-yellow-200">
+                        <i class="fas fa-info-circle mr-2"></i> <b>Dica:</b> Ao excluir uma categoria, os verbetes que a usam ficarão sem cor definida (cinza) até que você os edite e vincule a uma nova categoria.
                     </div>
                 </div>
             </div>
@@ -205,11 +277,24 @@
     </main>
 
     <!-- MODAIS E POPUPS -->
+    <!-- Modal Picker de Emoji -->
+    <div id="modal-emoji" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-fadeIn">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Escolha um Ícone</h3>
+                <button onclick="window.closeModal('modal-emoji')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="grid grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1 no-scrollbar" id="emoji-grid">
+                <!-- Emojis Injetados JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Modal do Verbete Completo -->
     <div id="modal-verbete" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4 transition-opacity">
         <div class="glass-modal rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-fadeIn">
-            <button onclick="window.closeModal('modal-verbete')" class="absolute top-4 right-5 text-gray-400 hover:text-red-500 transition text-2xl z-10">
-                <i class="fas fa-times-circle"></i>
+            <button onclick="window.closeModal('modal-verbete')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 transition text-2xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100">
+                <i class="fas fa-times"></i>
             </button>
             <div id="modal-verbete-content">
                 <!-- Injetado pelo JS -->
@@ -221,8 +306,8 @@
     <div id="modal-delete" class="fixed inset-0 bg-slate-900 bg-opacity-70 hide z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
             <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-            <h3 class="text-xl font-bold mb-2">Excluir Verbete?</h3>
-            <p class="text-gray-500 mb-6">Esta ação não pode ser desfeita. Tem certeza?</p>
+            <h3 class="text-xl font-bold mb-2">Tem certeza?</h3>
+            <p class="text-gray-500 mb-6">Esta ação não pode ser desfeita.</p>
             <div class="flex justify-center gap-3">
                 <button onclick="window.closeModal('modal-delete')" class="px-5 py-2 rounded-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300">Cancelar</button>
                 <button id="btn-confirm-delete" class="px-5 py-2 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600 shadow-md">Sim, Excluir</button>
@@ -232,13 +317,12 @@
 
     <!-- LÓGICA DO APLICATIVO -->
     <script type="module">
-        // Importações do Firebase (Agora incluindo autenticação do Google)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // =========================================================================
-        // CONFIGURAÇÕES DE SEGURANÇA (LISTA VIP)
+        // CONFIGURAÇÕES DE SEGURANÇA (LISTA VIP) E FIREBASE
         // =========================================================================
         const allowedEmails = [
             'diego.gatto@servidor.educacao.sp.gov.br',
@@ -250,16 +334,9 @@
             'rodrigo.ferreira02@servidor.educacao.sp.gov.br'
         ];
 
-        // =========================================================================
-        // ATENÇÃO: PARA O SEU SITE OFICIAL, SUBSTITUA ESTE BLOCO PELO SEU CÓDIGO
-        // =========================================================================
         const getFirebaseConfig = () => {
             if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                try {
-                    return JSON.parse(__firebase_config);
-                } catch (e) {
-                    console.warn("Aviso: Usando chaves locais.");
-                }
+                try { return JSON.parse(__firebase_config); } catch (e) { console.warn("Usando chaves locais."); }
             }
             return {
                 apiKey: "AIzaSyB0m6Wz0uFJsAjxHpXLZY54r9qbrj2Guss",
@@ -277,107 +354,152 @@
         const googleProvider = new GoogleAuthProvider();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'robopedia-app';
 
-        // Estado Global da Aplicação
-        const state = {
-            verbetes: [],
-            filterCategory: 'Todas',
-            searchQuery: '',
-            sortOrder: 'random',
-            editingId: null,
-            deleteIdPending: null
+        // =========================================================================
+        // DADOS E PALETAS DE DESIGN (ESTADO GLOBAL)
+        // =========================================================================
+        const EMOJIS = ['🤖','🦾','🦿','🧠','🔋','🔌','💻','🖥️','⌨️','⚙️','🛠️','🪛','📡','🔬','🔭','🚀','🛸','💡','📚','🎓','📐','🧪','🧲','🕹️','📱','📟','📸','📹','🔥','⚡','🌐','🚧','🚦','✨','🔧','🔩','🖲️','🎙️','🔊','🎮'];
+        
+        // As paletas convertem a escolha de cor do admin em classes do Tailwind CSS
+        const PALETTE = {
+            blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', badge: 'bg-blue-200 text-blue-900' },
+            green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-900', badge: 'bg-green-200 text-green-900' },
+            yellow: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-900', badge: 'bg-yellow-200 text-yellow-900' },
+            orange: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-900', badge: 'bg-orange-200 text-orange-900' },
+            purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-900', badge: 'bg-purple-200 text-purple-900' },
+            red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-900', badge: 'bg-red-200 text-red-900' },
+            teal: { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-900', badge: 'bg-teal-200 text-teal-900' },
+            gray: { bg: 'bg-slate-50', border: 'border-slate-300', text: 'text-slate-900', badge: 'bg-slate-200 text-slate-900' }
         };
 
-        const categories = ['Todas', 'Hardware', 'Software', 'Eletrônica', 'Mecânica', 'Curiosidades', 'Outros'];
+        const state = {
+            verbetes: [],
+            categories: [],
+            filterCategoryId: 'Todas',
+            searchQuery: '',
+            sortOrder: 'random',
+            
+            // Controle de Formulários Admin
+            adminTab: 'verbetes', // 'verbetes' | 'categorias'
+            editingVerbeteId: null,
+            editingCategoryId: null,
+            
+            // Controle de Exclusão
+            deleteItemType: null, // 'verbete' | 'categoria'
+            deleteItemId: null
+        };
+
+        let isListenerSetup = false;
+        let unsubscribeVerbetes = null;
+        let unsubscribeCats = null;
 
         // =========================================================================
-        // INICIALIZAÇÃO E AUTENTICAÇÃO
+        // AUTENTICAÇÃO E BANCO DE DADOS
         // =========================================================================
         const initAuth = async () => {
             try {
-                // Tenta autenticação com o token da nossa plataforma de teste, se houver
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    // Inicia como anônimo para o público em geral
                     await signInAnonymously(auth);
                 }
             } catch (error) {
-                console.error("Erro na autenticação inicial:", error);
+                if (error.code === 'auth/operation-not-allowed') {
+                    showToast("Aviso: Ative o login 'Anônimo' no Firebase!", "error");
+                } else {
+                    console.error("Erro na autenticação:", error);
+                }
             }
         };
 
-        // Chama a inicialização apenas uma vez
+        // Executa a autenticação apenas uma vez ao carregar a página
         initAuth();
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                setupDatabaseListener();
+                if (!isListenerSetup) {
+                    isListenerSetup = true;
+                    setupDatabaseListeners();
+                }
             }
-            renderApp(); // Re-renderiza a tela para verificar permissões de admin
+            renderApp();
         });
 
-        // Função para Login do Admin (Chamada pelo botão)
         window.loginAdmin = async () => {
             try {
                 const result = await signInWithPopup(auth, googleProvider);
-                const userEmail = result.user.email;
-                
-                if (allowedEmails.includes(userEmail)) {
+                if (allowedEmails.includes(result.user.email)) {
                     showToast(`Bem-vindo, ${result.user.displayName || 'Admin'}!`, "success");
                     renderApp();
                 } else {
-                    // E-mail não está na lista!
-                    showToast(`Acesso Negado para: ${userEmail}. Você não tem permissão.`, "error");
-                    await signOut(auth); // Desloga o penetra
-                    await signInAnonymously(auth); // Volta a ser anônimo
+                    showToast(`Acesso Negado. E-mail não autorizado.`, "error");
+                    await signOut(auth);
                 }
             } catch (error) {
-                if (error.code !== 'auth/popup-closed-by-user') {
-                    showToast("Erro ao fazer login: " + error.message, "error");
-                }
+                if (error.code !== 'auth/popup-closed-by-user') showToast("Erro no login: " + error.message, "error");
             }
         };
 
-        // Função para Deslogar o Admin
         window.logoutAdmin = async () => {
+            isListenerSetup = false;
+            if (unsubscribeVerbetes) unsubscribeVerbetes();
+            if (unsubscribeCats) unsubscribeCats();
             await signOut(auth);
-            await signInAnonymously(auth);
-            window.location.hash = ''; // Redireciona para a home
-            showToast("Você saiu do painel de administração.", "success");
+            
+            // Retorna ao utilizador anónimo para que a página pública continue a funcionar
+            try {
+                await signInAnonymously(auth);
+            } catch (e) {
+                console.error("Erro ao voltar para anónimo", e);
+            }
+            
+            window.location.hash = '';
+            showToast("Você saiu do painel seguro.", "success");
         };
 
-        function setupDatabaseListener() {
-            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia');
-            
-            onSnapshot(colRef, (snapshot) => {
+        function setupDatabaseListeners() {
+            if (!auth.currentUser) return;
+
+            // Escuta a tabela de Verbetes
+            const colVerbetes = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia');
+            unsubscribeVerbetes = onSnapshot(colVerbetes, (snapshot) => {
                 state.verbetes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
-            }, (error) => {
-                console.error("Erro ao carregar banco de dados.", error);
+            });
+
+            // Escuta a tabela de Categorias
+            const colCats = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia_categories');
+            unsubscribeCats = onSnapshot(colCats, (snapshot) => {
+                state.categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                populateCategorySelects();
+                renderApp();
             });
         }
 
         // =========================================================================
-        // FUNÇÕES UTILITÁRIAS
+        // HELPERS E UTILS
         // =========================================================================
-        const escapeHTML = (str) => {
-            return str ? String(str).replace(/[&<>'"]/g, tag => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-            }[tag] || tag)) : '';
-        };
+        const escapeHTML = str => str ? String(str).replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t]||t)) : '';
 
         const showToast = (message, type = 'success') => {
             const toast = document.createElement('div');
             toast.className = `px-5 py-3 rounded-xl shadow-xl text-white font-medium text-sm flex items-center transition-all duration-300 transform translate-y-0 opacity-100 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
             toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i> ${escapeHTML(message)}`;
-            
-            const container = document.getElementById('toast-container');
-            container.appendChild(toast);
-            
+            document.getElementById('toast-container').appendChild(toast);
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        };
+
+        // Função crucial: "Junta" o verbete com a categoria dele (para saber a cor e o ícone na hora de exibir)
+        const resolveCategory = (verbete) => {
+            let cat = null;
+            // Se o verbete foi salvo no formato novo (com ID de categoria)
+            if (verbete.categoryId) cat = state.categories.find(c => c.id === verbete.categoryId);
+            // Se o verbete é antigo (formato de texto), tenta achar a categoria pelo nome
+            if (!cat && verbete.category) cat = state.categories.find(c => c.name.toLowerCase() === verbete.category.toLowerCase());
+            // Se não achar nada, aplica um design padrão "cinza" genérico para não quebrar o visual
+            return cat || { id: 'legacy', name: verbete.category || 'Sem Categoria', icon: verbete.icon || '❔', color: 'gray' };
         };
 
         const renderMedia = (url) => {
@@ -390,7 +512,48 @@
         };
 
         // =========================================================================
-        // LÓGICA DE INTERFACE (UI)
+        // PREPARAÇÃO DA INTERFACE (MÉTODOS INICIAIS)
+        // =========================================================================
+        function initEmojiPicker() {
+            const grid = document.getElementById('emoji-grid');
+            grid.innerHTML = EMOJIS.map(e => 
+                `<button onclick="window.selectEmoji('${e}')" class="text-3xl p-2 hover:bg-gray-100 rounded-lg transition transform hover:scale-110">${e}</button>`
+            ).join('');
+        }
+
+        function initColorPicker() {
+            const container = document.getElementById('color-picker-container');
+            const colorKeys = Object.keys(PALETTE);
+            
+            container.innerHTML = colorKeys.map(c => `
+                <label class="cursor-pointer group flex flex-col items-center">
+                    <input type="radio" name="cat_color" value="${c}" class="hidden" ${c==='blue'?'checked':''} onchange="document.getElementById('cform-color').value='${c}'">
+                    <div class="w-10 h-10 rounded-full border-4 border-white shadow-sm ring-2 ring-transparent transition-all group-hover:scale-110 
+                        ${PALETTE[c].bg.replace('50', '400')}"></div>
+                    <span class="text-xs text-gray-400 mt-1 uppercase font-bold group-hover:text-gray-700">${c}</span>
+                </label>
+            `).join('');
+
+            // Adiciona CSS extra para marcar qual bolinha de cor está selecionada
+            const style = document.createElement('style');
+            style.innerHTML = `input[name="cat_color"]:checked + div { ring-color: #6366f1; transform: scale(1.1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }`;
+            document.head.appendChild(style);
+        }
+
+        function populateCategorySelects() {
+            const select = document.getElementById('vform-category');
+            if (state.categories.length === 0) {
+                select.innerHTML = `<option value="">Nenhuma categoria cadastrada...</option>`;
+                return;
+            }
+            select.innerHTML = state.categories
+                .sort((a,b) => a.name.localeCompare(b.name))
+                .map(c => `<option value="${c.id}">${c.icon} ${escapeHTML(c.name)}</option>`)
+                .join('');
+        }
+
+        // =========================================================================
+        // LÓGICA DE RENDERIZAÇÃO PRINCIPAL
         // =========================================================================
         function renderApp() {
             const isAdminView = window.location.hash === '#admin';
@@ -399,17 +562,32 @@
             document.getElementById('view-admin').classList.toggle('hide', !isAdminView);
 
             if (isAdminView) {
-                // Lógica de proteção da área de Admin
                 const user = auth.currentUser;
                 const isAuthorized = user && user.email && allowedEmails.includes(user.email);
                 
                 if (isAuthorized) {
-                    // É admin VIP
                     document.getElementById('admin-login').classList.add('hide');
                     document.getElementById('admin-dashboard').classList.remove('hide');
-                    renderAdminTable();
+                    
+                    // Controle das Abas Visíveis
+                    const isVerbetes = state.adminTab === 'verbetes';
+                    document.getElementById('section-verbetes').classList.toggle('hide', !isVerbetes);
+                    document.getElementById('section-categorias').classList.toggle('hide', isVerbetes);
+                    
+                    const btnV = document.getElementById('tab-btn-verbetes');
+                    const btnC = document.getElementById('tab-btn-categorias');
+                    
+                    if(isVerbetes) {
+                        btnV.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-indigo-600 text-white shadow-md transform translate-y-[2px]";
+                        btnC.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-gray-100 text-gray-500 hover:bg-gray-200";
+                    } else {
+                        btnV.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-gray-100 text-gray-500 hover:bg-gray-200";
+                        btnC.className = "px-6 py-3 font-bold text-lg rounded-t-xl transition-all bg-indigo-600 text-white shadow-md transform translate-y-[2px]";
+                    }
+                    
+                    renderAdminVerbetes();
+                    renderAdminCategorias();
                 } else {
-                    // Não está logado ou não tem permissão
                     document.getElementById('admin-login').classList.remove('hide');
                     document.getElementById('admin-dashboard').classList.add('hide');
                 }
@@ -419,168 +597,192 @@
             }
         }
 
-        // --- PUBLIC VIEW ---
+        // --- PUBLIC VIEW RENDERERS ---
         function renderFilters() {
             const container = document.getElementById('filters-container');
-            container.innerHTML = categories.map(cat => {
-                const isActive = state.filterCategory === cat;
-                const baseClass = "px-4 py-2 rounded-full text-sm font-bold border-2 transition-all cursor-pointer";
-                const activeClass = isActive ? "bg-indigo-600 border-indigo-600 text-white shadow-md" : "bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600";
-                return `<button onclick="window.setFilter('${cat}')" class="${baseClass} ${activeClass}">${cat}</button>`;
+            
+            // Botão "Todas"
+            let html = `<button onclick="window.setFilter('Todas')" class="px-4 py-2 rounded-full text-sm font-bold border-2 transition-all cursor-pointer ${state.filterCategoryId === 'Todas' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300'}">Todas</button>`;
+            
+            // Lista categorias reais do banco
+            const validCats = state.categories.sort((a,b) => a.name.localeCompare(b.name));
+            html += validCats.map(cat => {
+                const isActive = state.filterCategoryId === cat.id;
+                const activeClass = isActive ? "bg-indigo-600 border-indigo-600 text-white shadow-md" : "bg-white border-gray-200 text-gray-500 hover:border-indigo-300";
+                return `<button onclick="window.setFilter('${cat.id}')" class="px-4 py-2 rounded-full text-sm font-bold border-2 transition-all cursor-pointer ${activeClass}">${cat.icon} ${escapeHTML(cat.name)}</button>`;
             }).join('');
             
-            const btnRandom = document.getElementById('btn-sort-random');
-            const btnAZ = document.getElementById('btn-sort-az');
-            
-            if(state.sortOrder === 'random') {
-                btnRandom.className = "px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md font-semibold text-sm transition";
-                btnAZ.className = "px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-semibold text-sm transition";
-            } else {
-                btnRandom.className = "px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-semibold text-sm transition";
-                btnAZ.className = "px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md font-semibold text-sm transition";
-            }
-        }
+            container.innerHTML = html;
 
-        function getFilteredAndSorted() {
-            let list = [...state.verbetes];
-            
-            if (state.filterCategory !== 'Todas') {
-                list = list.filter(v => v.category === state.filterCategory);
-            }
-            
-            if (state.searchQuery) {
-                const q = state.searchQuery.toLowerCase();
-                list = list.filter(v => v.title.toLowerCase().includes(q) || v.summary.toLowerCase().includes(q));
-            }
-            
-            if (state.sortOrder === 'az') {
-                list.sort((a, b) => a.title.localeCompare(b.title));
-            } else {
-                list.sort((a, b) => a.id.localeCompare(b.id)); 
-            }
-            return list;
+            // Sort buttons update
+            document.getElementById('btn-sort-random').className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'random' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
+            document.getElementById('btn-sort-az').className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'az' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
         }
 
         function renderCards() {
             const container = document.getElementById('cards-container');
             const emptyState = document.getElementById('empty-state');
-            const list = getFilteredAndSorted();
+            
+            let list = [...state.verbetes];
+            
+            // Filtro por categoria (Tratando retrocompatibilidade)
+            if (state.filterCategoryId !== 'Todas') {
+                list = list.filter(v => {
+                    if (v.categoryId) return v.categoryId === state.filterCategoryId;
+                    // Fallback para itens antigos
+                    const legacyCat = state.categories.find(c => c.id === state.filterCategoryId);
+                    return legacyCat && v.category === legacyCat.name;
+                });
+            }
+            
+            // Filtro de busca
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                list = list.filter(v => v.title.toLowerCase().includes(q) || v.summary.toLowerCase().includes(q));
+            }
+            
+            // Ordem
+            if (state.sortOrder === 'az') list.sort((a, b) => a.title.localeCompare(b.title));
+            else list.sort((a, b) => a.id.localeCompare(b.id)); 
             
             if (list.length === 0) {
                 container.innerHTML = '';
-                container.appendChild(emptyState);
                 emptyState.classList.remove('hidden');
                 return;
             }
             
             emptyState.classList.add('hidden');
             container.innerHTML = list.map(v => {
-                const colorClass = `cat-${v.category}` || 'cat-Outros';
+                const catInfo = resolveCategory(v);
+                const colors = PALETTE[catInfo.color] || PALETTE.gray;
+                
                 return `
-                <div class="bg-white rounded-2xl border-2 p-5 cursor-pointer transform hover:-translate-y-2 hover:shadow-xl transition-all duration-300 ${colorClass} flex flex-col h-full" onclick="window.openVerbete('${v.id}')">
-                    <div class="text-5xl mb-4 bg-white bg-opacity-60 w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm">${escapeHTML(v.icon)}</div>
+                <div class="rounded-2xl border-2 p-5 cursor-pointer transform hover:-translate-y-2 hover:shadow-xl transition-all duration-300 flex flex-col h-full bg-white ${colors.border}" onclick="window.openVerbete('${v.id}')">
+                    <div class="text-5xl mb-4 w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm ${colors.bg}">${catInfo.icon}</div>
                     <h3 class="text-xl font-bold mb-2 text-gray-900 leading-tight">${escapeHTML(v.title)}</h3>
                     <div class="mb-3">
-                        <span class="inline-block px-2 py-1 bg-white bg-opacity-70 rounded-md text-xs font-bold uppercase tracking-wider shadow-sm">${escapeHTML(v.category)}</span>
+                        <span class="inline-block px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${colors.badge}">${escapeHTML(catInfo.name)}</span>
                     </div>
-                    <p class="text-sm text-gray-700 opacity-90 line-clamp-3 mt-auto">${escapeHTML(v.summary)}</p>
+                    <p class="text-sm text-gray-600 line-clamp-3 mt-auto leading-relaxed">${escapeHTML(v.summary)}</p>
                 </div>`;
             }).join('');
         }
 
-        // --- ADMIN VIEW ---
-        function renderAdminTable() {
-            const tbody = document.getElementById('admin-table-body');
-            document.getElementById('admin-count').textContent = state.verbetes.length;
+        // --- ADMIN VIEW RENDERERS ---
+        function renderAdminVerbetes() {
+            const tbody = document.getElementById('table-verbetes-body');
+            document.getElementById('admin-verbete-count').textContent = state.verbetes.length;
             
             if (state.verbetes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum verbete cadastrado ainda.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum verbete cadastrado.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = state.verbetes.map(v => `
+            tbody.innerHTML = state.verbetes.map(v => {
+                const catInfo = resolveCategory(v);
+                const colors = PALETTE[catInfo.color] || PALETTE.gray;
+                return `
                 <tr class="hover:bg-indigo-50 transition border-b border-gray-50 last:border-0">
-                    <td class="p-3 text-2xl text-center w-16">${escapeHTML(v.icon)}</td>
+                    <td class="p-3 text-2xl text-center w-16"><div class="w-10 h-10 rounded-lg flex items-center justify-center ${colors.bg}">${catInfo.icon}</div></td>
                     <td class="p-3 font-semibold text-gray-800">${escapeHTML(v.title)}</td>
                     <td class="p-3">
-                        <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-bold uppercase">${escapeHTML(v.category)}</span>
+                        <span class="px-2 py-1 rounded text-xs font-bold uppercase ${colors.badge}">${escapeHTML(catInfo.name)}</span>
                     </td>
-                    <td class="p-3 text-center">
-                        <button onclick="window.editVerbete('${v.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg mr-2 transition"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.confirmDelete('${v.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                    <td class="p-3 text-center w-32">
+                        <button onclick="window.editVerbete('${v.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg mr-1 transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.confirmDelete('verbete', '${v.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
+        }
+
+        function renderAdminCategorias() {
+            const tbody = document.getElementById('table-categorias-body');
+            document.getElementById('admin-cat-count').textContent = state.categories.length;
+            
+            if (state.categories.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhuma categoria cadastrada.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = state.categories.sort((a,b)=>a.name.localeCompare(b.name)).map(c => {
+                const colors = PALETTE[c.color] || PALETTE.gray;
+                return `
+                <tr class="hover:bg-indigo-50 transition border-b border-gray-50 last:border-0">
+                    <td class="p-3 text-2xl text-center w-16"><div class="w-10 h-10 rounded-lg flex items-center justify-center ${colors.bg}">${c.icon}</div></td>
+                    <td class="p-3 font-bold text-gray-800">${escapeHTML(c.name)}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                            <span class="w-4 h-4 rounded-full ${colors.bg.replace('50','400')}"></span> ${c.color}
+                        </div>
+                    </td>
+                    <td class="p-3 text-center w-32">
+                        <button onclick="window.editCategory('${c.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg mr-1 transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.confirmDelete('categoria', '${c.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
         // =========================================================================
-        // AÇÕES EXPOSTAS AO WINDOW (Para o HTML conseguir chamar)
+        // AÇÕES DA INTERFACE E FORMULÁRIOS
         // =========================================================================
-        window.setFilter = (cat) => {
-            state.filterCategory = cat;
-            renderApp();
-        };
-
-        window.setSort = (order) => {
-            state.sortOrder = order;
-            renderApp();
-        };
-
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            state.searchQuery = e.target.value;
-            renderApp();
-        });
-
+        window.setAdminTab = (tab) => { state.adminTab = tab; renderApp(); };
+        window.setFilter = (catId) => { state.filterCategoryId = catId; renderApp(); };
+        window.setSort = (order) => { state.sortOrder = order; renderApp(); };
         window.addEventListener('hashchange', renderApp);
+        document.getElementById('search-input').addEventListener('input', (e) => { state.searchQuery = e.target.value; renderApp(); });
 
-        // Modal de Visualização do Verbete
+        window.openEmojiPicker = () => document.getElementById('modal-emoji').classList.remove('hide');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hide');
+        window.selectEmoji = (emoji) => {
+            document.getElementById('cform-icon').value = emoji;
+            document.getElementById('cform-emoji-display').innerText = emoji;
+            window.closeModal('modal-emoji');
+        };
+
+        // Modal de Visualização (Público)
         window.openVerbete = (id) => {
             const v = state.verbetes.find(item => item.id === id);
             if (!v) return;
             
-            const colorClass = `cat-${v.category}` || 'cat-Outros';
+            const catInfo = resolveCategory(v);
+            const colors = PALETTE[catInfo.color] || PALETTE.gray;
             
             const html = `
-                <div class="p-8 sm:p-10 ${colorClass} rounded-t-3xl border-b border-opacity-20 border-black">
+                <div class="p-8 sm:p-10 ${colors.bg} rounded-t-3xl border-b ${colors.border}">
                     <div class="flex items-start gap-6">
-                        <div class="text-6xl bg-white bg-opacity-70 w-24 h-24 rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0">${escapeHTML(v.icon)}</div>
+                        <div class="text-6xl bg-white w-24 h-24 rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0">${catInfo.icon}</div>
                         <div>
-                            <span class="inline-block px-3 py-1 bg-white bg-opacity-80 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm mb-3">${escapeHTML(v.category)}</span>
+                            <span class="inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm mb-3 ${colors.badge}">${escapeHTML(catInfo.name)}</span>
                             <h2 class="text-3xl sm:text-4xl font-black text-gray-900 leading-tight mb-2">${escapeHTML(v.title)}</h2>
-                            <p class="text-lg font-medium opacity-90">${escapeHTML(v.summary)}</p>
+                            <p class="text-lg text-gray-700 font-medium">${escapeHTML(v.summary)}</p>
                         </div>
                     </div>
                 </div>
                 <div class="p-8 sm:p-10 bg-white rounded-b-3xl">
                     ${renderMedia(v.mediaUrl)}
-                    
                     <div class="mt-8">
                         <h4 class="text-xl font-bold text-indigo-900 mb-3 flex items-center"><i class="fas fa-book-open text-indigo-500 mr-2"></i> O que é e como funciona?</h4>
                         <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg bg-indigo-50 p-5 rounded-2xl border border-indigo-100">${escapeHTML(v.explanation)}</p>
                     </div>
-                    
                     <div class="mt-8">
                         <h4 class="text-xl font-bold text-green-900 mb-3 flex items-center"><i class="fas fa-lightbulb text-green-500 mr-2"></i> Exemplo Prático</h4>
                         <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg bg-green-50 p-5 rounded-2xl border border-green-100">${escapeHTML(v.practicalExample)}</p>
                     </div>
                 </div>
             `;
-            
             document.getElementById('modal-verbete-content').innerHTML = html;
             document.getElementById('modal-verbete').classList.remove('hide');
         };
 
-        window.closeModal = (modalId) => {
-            document.getElementById(modalId).classList.add('hide');
-        };
-
-        // --- FUNÇÕES CRUD ADMIN ---
-        document.getElementById('admin-form').addEventListener('submit', async (e) => {
+        // --- CRUD VERBETES ---
+        document.getElementById('admin-verbete-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Segurança extra: Confere se não foi deslogado misteriosamente
-            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) {
-                showToast("Erro: Você não tem permissão para salvar.", "error");
+            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) return showToast("Acesso Negado.", "error");
+
+            if(state.categories.length === 0) {
+                showToast("Erro: Cadastre pelo menos uma Categoria primeiro!", "error");
                 return;
             }
 
@@ -588,92 +790,156 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
             btn.disabled = true;
 
-            const verbeteData = {
-                title: document.getElementById('form-title').value,
-                category: document.getElementById('form-category').value,
-                icon: document.getElementById('form-icon').value,
-                summary: document.getElementById('form-summary').value,
-                mediaUrl: document.getElementById('form-media').value,
-                explanation: document.getElementById('form-explanation').value,
-                practicalExample: document.getElementById('form-example').value,
+            const categoryId = document.getElementById('vform-category').value;
+            const categoryObj = state.categories.find(c => c.id === categoryId);
+
+            const data = {
+                title: document.getElementById('vform-title').value,
+                categoryId: categoryId,
+                category: categoryObj ? categoryObj.name : '', // Guarda o nome também para legado/segurança
+                summary: document.getElementById('vform-summary').value,
+                mediaUrl: document.getElementById('vform-media').value,
+                explanation: document.getElementById('vform-explanation').value,
+                practicalExample: document.getElementById('vform-example').value,
                 updatedAt: new Date().toISOString()
             };
 
             try {
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia');
-                if (state.editingId) {
-                    await updateDoc(doc(colRef, state.editingId), verbeteData);
-                    showToast('Verbete atualizado com sucesso!');
+                if (state.editingVerbeteId) {
+                    await updateDoc(doc(colRef, state.editingVerbeteId), data);
+                    showToast('Verbete atualizado!');
                 } else {
-                    verbeteData.createdAt = new Date().toISOString();
-                    await addDoc(colRef, verbeteData);
-                    showToast('Novo verbete cadastrado!');
+                    data.createdAt = new Date().toISOString();
+                    await addDoc(colRef, data);
+                    showToast('Novo verbete salvo!');
                 }
-                window.resetForm();
-            } catch (error) {
-                showToast('Erro ao salvar: ' + error.message, 'error');
-            } finally {
-                btn.innerHTML = 'Salvar Verbete';
-                btn.disabled = false;
-            }
+                window.resetVerbeteForm();
+            } catch (error) { showToast('Erro: ' + error.message, 'error'); } 
+            finally { btn.innerHTML = 'Salvar Verbete'; btn.disabled = false; }
         });
 
         window.editVerbete = (id) => {
             const v = state.verbetes.find(item => item.id === id);
             if (!v) return;
+            state.editingVerbeteId = id;
+            document.getElementById('form-verbete-title').innerHTML = `<i class="fas fa-edit text-blue-500 mr-2"></i> Editando Verbete`;
+            document.getElementById('vform-title').value = v.title || '';
+            
+            // Lógica para selecionar a categoria (mesmo se o verbete for legado)
+            const catSelect = document.getElementById('vform-category');
+            if (v.categoryId) {
+                catSelect.value = v.categoryId;
+            } else if (v.category) {
+                // Tenta achar categoria antiga pelo nome
+                const matched = state.categories.find(c => c.name.toLowerCase() === v.category.toLowerCase());
+                if(matched) catSelect.value = matched.id;
+            }
 
-            state.editingId = id;
-            document.getElementById('form-title-display').innerHTML = `<i class="fas fa-edit text-blue-500 mr-2"></i> Editando: ${escapeHTML(v.title)}`;
-            
-            document.getElementById('form-title').value = v.title || '';
-            document.getElementById('form-category').value = v.category || 'Outros';
-            document.getElementById('form-icon').value = v.icon || '';
-            document.getElementById('form-summary').value = v.summary || '';
-            document.getElementById('form-media').value = v.mediaUrl || '';
-            document.getElementById('form-explanation').value = v.explanation || '';
-            document.getElementById('form-example').value = v.practicalExample || '';
-            
+            document.getElementById('vform-summary').value = v.summary || '';
+            document.getElementById('vform-media').value = v.mediaUrl || '';
+            document.getElementById('vform-explanation').value = v.explanation || '';
+            document.getElementById('vform-example').value = v.practicalExample || '';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.resetForm = () => {
-            state.editingId = null;
-            document.getElementById('admin-form').reset();
-            document.getElementById('form-title-display').innerHTML = `<i class="fas fa-plus-circle text-green-500 mr-2"></i> Novo Verbete`;
+        window.resetVerbeteForm = () => {
+            state.editingVerbeteId = null;
+            document.getElementById('admin-verbete-form').reset();
+            document.getElementById('form-verbete-title').innerHTML = `<i class="fas fa-plus-circle text-green-500 mr-2"></i> Novo Verbete`;
         };
 
-        window.confirmDelete = (id) => {
-            state.deleteIdPending = id;
+        // --- CRUD CATEGORIAS ---
+        document.getElementById('admin-category-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) return showToast("Acesso Negado.", "error");
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            btn.disabled = true;
+
+            const data = {
+                name: document.getElementById('cform-name').value.trim(),
+                icon: document.getElementById('cform-icon').value,
+                color: document.getElementById('cform-color').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'robopedia_categories');
+                if (state.editingCategoryId) {
+                    await updateDoc(doc(colRef, state.editingCategoryId), data);
+                    showToast('Categoria atualizada!');
+                } else {
+                    data.createdAt = new Date().toISOString();
+                    await addDoc(colRef, data);
+                    showToast('Nova categoria salva!');
+                }
+                window.resetCategoryForm();
+            } catch (error) { showToast('Erro: ' + error.message, 'error'); } 
+            finally { btn.innerHTML = 'Salvar Categoria'; btn.disabled = false; }
+        });
+
+        window.editCategory = (id) => {
+            const c = state.categories.find(item => item.id === id);
+            if (!c) return;
+            state.editingCategoryId = id;
+            document.getElementById('form-cat-title').innerHTML = `<i class="fas fa-edit text-blue-500 mr-2"></i> Editando Categoria`;
+            document.getElementById('cform-name').value = c.name || '';
+            document.getElementById('cform-icon').value = c.icon || '🤖';
+            document.getElementById('cform-emoji-display').innerText = c.icon || '🤖';
+            
+            // Marca o radio button da cor correta
+            document.getElementById('cform-color').value = c.color || 'gray';
+            const radio = document.querySelector(`input[name="cat_color"][value="${c.color}"]`);
+            if(radio) radio.checked = true;
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetCategoryForm = () => {
+            state.editingCategoryId = null;
+            document.getElementById('admin-category-form').reset();
+            document.getElementById('cform-icon').value = '🤖';
+            document.getElementById('cform-emoji-display').innerText = '🤖';
+            document.querySelector(`input[name="cat_color"][value="blue"]`).checked = true;
+            document.getElementById('cform-color').value = 'blue';
+            document.getElementById('form-cat-title').innerHTML = `<i class="fas fa-tags text-green-500 mr-2"></i> Nova Categoria`;
+        };
+
+        // --- SISTEMA DE EXCLUSÃO GENÉRICO ---
+        window.confirmDelete = (type, id) => {
+            state.deleteItemType = type;
+            state.deleteItemId = id;
             document.getElementById('modal-delete').classList.remove('hide');
         };
 
         document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
-            if (!state.deleteIdPending) return;
-            
-            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) {
-                showToast("Erro: Você não tem permissão para deletar.", "error");
-                return;
-            }
+            if (!state.deleteItemId || !state.deleteItemType) return;
+            if (!auth.currentUser || !allowedEmails.includes(auth.currentUser.email)) return showToast("Acesso Negado.", "error");
 
             const btn = document.getElementById('btn-confirm-delete');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'robopedia', state.deleteIdPending);
-                await deleteDoc(docRef);
-                showToast('Verbete excluído com sucesso!');
+                const colName = state.deleteItemType === 'verbete' ? 'robopedia' : 'robopedia_categories';
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', colName);
+                await deleteDoc(docRef, state.deleteItemId);
+                showToast(`${state.deleteItemType === 'verbete' ? 'Verbete' : 'Categoria'} excluída!`);
                 window.closeModal('modal-delete');
-            } catch (error) {
-                showToast('Erro ao excluir: ' + error.message, 'error');
-            } finally {
+            } catch (error) { showToast('Erro ao excluir: ' + error.message, 'error'); } 
+            finally {
                 btn.innerHTML = 'Sim, Excluir';
                 btn.disabled = false;
-                state.deleteIdPending = null;
+                state.deleteItemId = null;
+                state.deleteItemType = null;
             }
         });
 
-        // A inicialização principal agora é feita logo após a declaração do initAuth()
+        // Inicialização de componentes
+        initEmojiPicker();
+        initColorPicker();
     </script>
 </body>
 </html>
