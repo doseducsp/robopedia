@@ -1,1 +1,1158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robopédia - Enciclopédia de Robótica</title>
+  
+  <!-- Tailwind CSS para Design Moderno e Responsivo -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome para Ícones Incríveis -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SDKs do Firebase (Versão estável modular para ambiente estático) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // ================================================================= -->
+    // ⚙️ CONFIGURAÇÃO DO FIREBASE (CONECTADO COM SUCESSO!)               -->
+    // ================================================================= -->
+    const firebaseConfig = {
+      apiKey: "AIzaSyAVf8LTAkJpqgtFoHt6QrQLk6Eac9oJtaU",
+      authDomain: "robopediado.firebaseapp.com",
+      projectId: "robopediado",
+      storageBucket: "robopediado.firebasestorage.app",
+      messagingSenderId: "513150183334",
+      appId: "1:513150183334:web:62ac59e2e9578f34899167"
+    };
+
+    // Inicialização do Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Identificador público seguro para as coleções
+    const collectionPath = 'artifacts/robopedia/public/data/verbetes';
+
+    // Exportação das referências globais de controle para uso em nossos scripts locais
+    window.db = db;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.deleteDoc = deleteDoc;
+    window.collection = collection;
+
+    // Autenticação anônima (Obrigatória antes de qualquer consulta ao Firestore)
+    async function initAuth() {
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Erro na autenticação anônima do Firebase: ", error);
+        showCustomNotice("Conexão com o servidor falhou.", "error");
+      }
+    }
+
+    // Inicializa autenticação e escuta mudanças no banco de dados em tempo real
+    initAuth();
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Escuta os verbetes salvos no Firestore
+        const verbetesCol = collection(db, 'artifacts', 'robopedia', 'public', 'data', 'verbetes');
+        
+        onSnapshot(verbetesCol, (snapshot) => {
+          const freshData = [];
+          snapshot.forEach((doc) => {
+            freshData.push(doc.data());
+          });
+          
+          // Se o banco estiver vazio no primeiro acesso, povoa com os itens padrão
+          if (freshData.length === 0) {
+            setupInitialDatabase();
+          } else {
+            window.database = freshData;
+            generateCategoriesMenu();
+            renderFeed();
+            if (window.location.hash === "#admin" && sessionStorage.getItem("robopedia_admin") === "true") {
+              renderAdminVerbetesList();
+            }
+          }
+        }, (error) => {
+          console.error("Erro ao sincronizar banco de dados: ", error);
+          showCustomNotice("Erro de permissão ao sincronizar verbetes.", "error");
+        });
+      }
+    });
+
+    // Função interna para preencher o banco de dados pela primeira vez caso esteja limpo
+    async function setupInitialDatabase() {
+      const defaultData = [
+        {
+          id: "motor-dc",
+          category: "Atuadores",
+          icon: "fa-solid fa-gear",
+          color: "from-orange-500 to-amber-500",
+          badgeBg: "bg-orange-50 text-orange-700 border-orange-200",
+          title: "Motor DC",
+          short: "Motor de corrente contínua para dar movimento aos robôs.",
+          description: "O Motor de Corrente Contínua (DC) é um atuador eletromecânico que converte energia elétrica em movimento rotacional. Ele é amplamente utilizado em rodas de robôs móveis, garras e pequenos mecanismos que necessitam de força motriz direta.",
+          example: "Para controlar a velocidade e o sentido de rotação de um Motor DC no Micro:bit ou Arduino, normalmente utilizamos um circuito chamado Ponte H (como o chip L298N ou blocos de extensão dedicados).",
+          media: "https://media.giphy.com/media/l41lWfcNbLXGQ8sU0/giphy.gif"
+        },
+        {
+          id: "sensor-ultrassonico",
+          category: "Sensores",
+          icon: "fa-solid fa-wave-square",
+          color: "from-emerald-500 to-teal-500",
+          badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          title: "Sensor Ultrassônico",
+          short: "Mede distâncias e detecta obstáculos usando ondas sonoras.",
+          description: "Funciona enviando um pulso de som de alta frequência (inaudível para humanos). Esse som viaja pelo ar, bate em um obstáculo e retorna ao sensor. Ao calcular o tempo que a onda levou para ir e voltar, o microcontrolador descobre a distância exata até o objeto.",
+          example: "Muito usado em robôs seguidores de linha ou robôs limpa-trilho para evitar colisões com paredes ou objetos.",
+          media: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80"
+        }
+      ];
+
+      for (const item of defaultData) {
+        const docRef = doc(db, 'artifacts', 'robopedia', 'public', 'data', 'verbetes', item.id);
+        await setDoc(docRef, item);
+      }
+    }
+  </script>
+
+  <style>
+    /* Esconde a barra de rolagem mas mantém a rolagem funcional */
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Container responsivo para vídeos do YouTube */
+    .video-responsive {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .video-responsive iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 1.5rem;
+    }
+
+    /* Estilos do Teclado Virtual QWERTY */
+    .kbd-btn {
+      flex: 1;
+      max-width: 40px;
+      height: 48px;
+      background-color: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-weight: 700;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: all 0.1s ease-in-out;
+      user-select: none;
+    }
+    .kbd-btn:hover {
+      background-color: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+    .kbd-btn:active {
+      transform: scale(0.92);
+      background-color: #dbeafe;
+    }
+    .kbd-btn-action {
+      background-color: #f1f5f9;
+      max-width: none;
+      padding: 0 1rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-500 selection:text-white">
+
+  <!-- BANCO DE DADOS LOCAL DINÂMICO (INICIALIZADO PELO FIREBASE) -->
+  <script>
+    window.database = [];
+    const ADMIN_TOKEN = "c2FpbnRwYXBlcnQ="; // Senha base64: saintpapert
+  </script>
+
+  <!-- NOTIFICAÇÃO CUSTOMIZADA -->
+  <div id="customToast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] transition-transform duration-300 ease-out max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 flex items-center gap-3">
+    <div id="toastIconBox" class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0">
+      <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+    </div>
+    <div>
+      <h4 id="toastTitle" class="font-bold text-slate-800 text-sm">Sucesso</h4>
+      <p id="toastMessage" class="text-xs text-slate-500">Mensagem do sistema.</p>
+    </div>
+  </div>
+
+  <!-- CABEÇALHO DA PÁGINA -->
+  <header class="bg-blue-600 text-white pt-16 pb-24 px-4 rounded-b-[3rem] shadow-xl relative overflow-hidden">
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <h1 class="text-5xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-md">
+        <a href="#" onclick="goHome(); return false;" class="hover:opacity-90 transition-opacity">🤖 Robopédia</a>
+      </h1>
+      <p class="text-blue-100 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-8">
+        Guia dinâmico e enciclopédia de componentes para os seus projetos de robótica.
+      </p>
+
+      <!-- BARRA DE PESQUISA -->
+      <div id="searchBarContainer" class="max-w-xl mx-auto relative group">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+          <i class="fa-solid fa-magnifying-glass text-lg"></i>
+        </div>
+        <input type="text" id="searchInput" oninput="filterDatabase()" placeholder="Procurar sensor, atuador, comando..." class="w-full pl-12 pr-4 py-4 rounded-2xl bg-white text-slate-800 placeholder-slate-400 border-none shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium transition-all text-base md:text-lg">
+      </div>
+    </div>
+    
+    <!-- Elementos Decorativos -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
+      <i class="fa-solid fa-microchip text-[18rem] absolute -top-10 -left-10 transform -rotate-12"></i>
+      <i class="fa-solid fa-robot text-[20rem] absolute -bottom-16 -right-10 transform rotate-12"></i>
+    </div>
+  </header>
+
+  <!-- TELA INICIAL (FEED) -->
+  <main id="homePage" class="max-w-6xl mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <!-- MENU DE CATEGORIAS -->
+    <div class="flex gap-3 overflow-x-auto pb-4 mb-10 scrollbar-none justify-start md:justify-center">
+      <button onclick="selectCategory('Todos')" id="catBtn-Todos" class="category-btn shrink-0 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-md border-2 border-transparent transition-all hover:scale-105">
+        ⚡ Todos
+      </button>
+      <div id="dynamicCategories" class="flex gap-3"></div>
+    </div>
+
+    <!-- FEED DE CARDS -->
+    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+    <!-- FEEDBACK VAZIO -->
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="w-24 h-24 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+        <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-slate-700 mb-2">Nenhum verbete encontrado</h3>
+      <p class="text-slate-500">Tente procurar por termos diferentes ou selecione outra categoria.</p>
+    </div>
+  </main>
+
+  <!-- DETALHES DO VERBETE -->
+  <article id="detailPage" class="hidden max-w-4xl mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <button onclick="goHome()" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 rounded-2xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-lg border border-slate-100 mb-8 cursor-pointer group hover:-translate-y-0.5">
+      <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Voltar à Enciclopédia
+    </button>
+
+    <div class="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border border-slate-100 relative overflow-hidden">
+      <div class="flex flex-col md:flex-row gap-8 items-start mb-8 relative z-10">
+        <div id="detailIconBox" class="w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-br text-white flex items-center justify-center shrink-0 shadow-lg text-5xl transform rotate-3 ring-8 ring-white">
+          <i id="detailIcon" class="fa-solid fa-robot"></i>
+        </div>
+        
+        <div class="flex-1">
+          <span id="detailCategoryBadge" class="inline-block px-4 py-1.5 text-xs font-black rounded-xl uppercase tracking-wider border mb-4">Categoria</span>
+          <h2 id="detailTitle" class="text-4xl md:text-5xl font-black text-slate-800 tracking-tight mb-3">Título</h2>
+          <p id="detailShort" class="text-lg md:text-xl text-slate-500 font-medium leading-relaxed">Resumo curto.</p>
+        </div>
+      </div>
+
+      <div class="w-full h-px bg-slate-100 my-8"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+        <div id="mediaBox" class="lg:col-span-12 hidden"></div>
+
+        <div class="lg:col-span-12 space-y-8">
+          <div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span class="w-2 h-6 bg-blue-600 rounded-full inline-block"></span> Como Funciona?
+            </h3>
+            <p id="detailDescription" class="text-slate-600 text-lg leading-relaxed whitespace-pre-line"></p>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-100 rounded-2.5xl p-6 md:p-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-code text-blue-500"></i> Exemplo Prático de Uso
+            </h3>
+            <p id="detailExample" class="text-slate-600 italic text-base md:text-lg leading-relaxed whitespace-pre-line"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-0 right-0 w-full h-full overflow-hidden opacity-[0.02] pointer-events-none">
+        <i class="fa-solid fa-book-open text-[30rem] absolute -bottom-24 -right-24 transform -rotate-12"></i>
+      </div>
+    </div>
+  </article>
+
+  <!-- TELA DE LOGIN ADMIN -->
+  <section id="loginPage" class="hidden max-w-md mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <div class="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 text-center">
+      <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <i class="fa-solid fa-lock text-3xl"></i>
+      </div>
+      <h2 class="text-3xl font-black text-slate-800 mb-2">Painel de Controlo</h2>
+      <p class="text-slate-500 mb-6 text-sm">Digite no teclado ou use o teclado virtual abaixo.</p>
+      
+      <div class="space-y-4 text-left">
+        <!-- TECLADO VIRTUAL QWERTY COM NÚMEROS -->
+        <div>
+          <label class="block text-slate-700 text-sm font-bold mb-2">Senha do Administrador</label>
+          
+          <div class="relative w-full mb-4">
+            <input type="password" id="adminPasswordInput" onkeydown="if(event.key === 'Enter') attemptLogin()" class="w-full px-4 py-4 pr-12 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 font-medium tracking-[0.2em] text-lg shadow-inner text-slate-700 transition-colors" placeholder="••••••••">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-blue-600 focus:outline-none p-2" title="Ver senha">
+              <i id="eyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          
+          <!-- Botões do Teclado -->
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-center gap-1">
+              <button type="button" onclick="typeLetter('1')" class="kbd-btn">1</button>
+              <button type="button" onclick="typeLetter('2')" class="kbd-btn">2</button>
+              <button type="button" onclick="typeLetter('3')" class="kbd-btn">3</button>
+              <button type="button" onclick="typeLetter('4')" class="kbd-btn">4</button>
+              <button type="button" onclick="typeLetter('5')" class="kbd-btn">5</button>
+              <button type="button" onclick="typeLetter('6')" class="kbd-btn">6</button>
+              <button type="button" onclick="typeLetter('7')" class="kbd-btn">7</button>
+              <button type="button" onclick="typeLetter('8')" class="kbd-btn">8</button>
+              <button type="button" onclick="typeLetter('9')" class="kbd-btn">9</button>
+              <button type="button" onclick="typeLetter('0')" class="kbd-btn">0</button>
+            </div>
+            <div class="flex justify-center gap-1">
+              <button type="button" onclick="typeLetter('q')" class="kbd-btn">q</button>
+              <button type="button" onclick="typeLetter('w')" class="kbd-btn">w</button>
+              <button type="button" onclick="typeLetter('e')" class="kbd-btn">e</button>
+              <button type="button" onclick="typeLetter('r')" class="kbd-btn">r</button>
+              <button type="button" onclick="typeLetter('t')" class="kbd-btn">t</button>
+              <button type="button" onclick="typeLetter('y')" class="kbd-btn">y</button>
+              <button type="button" onclick="typeLetter('u')" class="kbd-btn">u</button>
+              <button type="button" onclick="typeLetter('i')" class="kbd-btn">i</button>
+              <button type="button" onclick="typeLetter('o')" class="kbd-btn">o</button>
+              <button type="button" onclick="typeLetter('p')" class="kbd-btn">p</button>
+            </div>
+            <div class="flex justify-center gap-1">
+              <button type="button" onclick="typeLetter('a')" class="kbd-btn">a</button>
+              <button type="button" onclick="typeLetter('s')" class="kbd-btn">s</button>
+              <button type="button" onclick="typeLetter('d')" class="kbd-btn">d</button>
+              <button type="button" onclick="typeLetter('f')" class="kbd-btn">f</button>
+              <button type="button" onclick="typeLetter('g')" class="kbd-btn">g</button>
+              <button type="button" onclick="typeLetter('h')" class="kbd-btn">h</button>
+              <button type="button" onclick="typeLetter('j')" class="kbd-btn">j</button>
+              <button type="button" onclick="typeLetter('k')" class="kbd-btn">k</button>
+              <button type="button" onclick="typeLetter('l')" class="kbd-btn">l</button>
+            </div>
+            <div class="flex justify-center gap-1">
+              <button type="button" onclick="typeLetter('z')" class="kbd-btn">z</button>
+              <button type="button" onclick="typeLetter('x')" class="kbd-btn">x</button>
+              <button type="button" onclick="typeLetter('c')" class="kbd-btn">c</button>
+              <button type="button" onclick="typeLetter('v')" class="kbd-btn">v</button>
+              <button type="button" onclick="typeLetter('b')" class="kbd-btn">b</button>
+              <button type="button" onclick="typeLetter('n')" class="kbd-btn">n</button>
+              <button type="button" onclick="typeLetter('m')" class="kbd-btn">m</button>
+              <button type="button" onclick="backspace()" class="kbd-btn kbd-btn-action text-slate-700" title="Apagar">
+                <i class="fa-solid fa-delete-left"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="flex justify-center mt-3">
+            <button type="button" onclick="clearPassword()" class="text-xs font-bold text-rose-500 hover:text-rose-700 px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 transition-colors uppercase tracking-wider">
+              <i class="fa-solid fa-eraser mr-1"></i> Limpar Tudo
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button onclick="attemptLogin()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
+            Aceder ao Painel <i class="fa-solid fa-arrow-right ml-2"></i>
+          </button>
+          <button onclick="goHome()" class="w-full mt-3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all cursor-pointer text-sm">
+            Voltar à Home
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAINEL ADMINISTRATIVO -->
+  <section id="adminPage" class="hidden max-w-5xl mx-auto px-4 -mt-10 pb-20 relative z-20">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 class="text-4xl font-black text-slate-800">Área do Administrador</h2>
+        <p class="text-slate-500">Adicione, edite ou remova verbetes em tempo real.</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="logout()" class="px-5 py-3 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-2xl font-bold transition-all text-sm cursor-pointer">
+          Sair do Painel <i class="fa-solid fa-sign-out-alt ml-1"></i>
+        </button>
+        <button onclick="goHome()" class="px-5 py-3 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-2xl font-bold transition-all text-sm cursor-pointer">
+          Ver Site <i class="fa-solid fa-eye ml-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Formulário de Cadastro / Edição -->
+      <div class="lg:col-span-7 bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+        <h3 id="formSectionTitle" class="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+          <i class="fa-solid fa-square-plus text-blue-500"></i> Criar Novo Verbete
+        </h3>
+        
+        <form id="verbeteForm" onsubmit="saveVerbete(event)" class="space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">Título do Verbete</label>
+              <input type="text" id="formTitle" required oninput="autoGenerateId()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor de Toque">
+            </div>
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">ID Único (Identificador URL)</label>
+              <input type="text" id="formId" required class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 focus:outline-none cursor-not-allowed" readonly placeholder="Ex: sensor-de-toque">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">Categoria</label>
+              <div class="flex gap-2">
+                <select id="formCategory" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                  <option value="Sensores">Sensores</option>
+                  <option value="Atuadores">Atuadores</option>
+                  <option value="Displays">Displays</option>
+                  <option value="MakeCode">MakeCode</option>
+                  <option value="Placas">Placas</option>
+                </select>
+                <button type="button" onclick="addNewCategoryPrompt()" class="px-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors">
+                  + Nova
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-700 text-sm font-bold mb-2">Ícone (FontAwesome)</label>
+              <div class="flex gap-2">
+                <select id="formIcon" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100">
+                  <option value="fa-solid fa-gear">⚙️ Engrenagem (Motor)</option>
+                  <option value="fa-solid fa-wave-square">〰️ Sensor de Onda</option>
+                  <option value="fa-solid fa-lightbulb">💡 Lâmpada (LED)</option>
+                  <option value="fa-solid fa-compass">🧭 Bússola/Servo</option>
+                  <option value="fa-solid fa-microchip">🔌 Chip/Placa</option>
+                  <option value="fa-solid fa-gamepad">🎮 Controle</option>
+                  <option value="fa-solid fa-volume-high">🔊 Som</option>
+                </select>
+                <input type="text" id="formIconCustom" placeholder="fa-solid fa-xxx" class="w-24 px-3 py-3 rounded-xl border border-slate-200 text-xs focus:outline-none" title="Coloque uma classe FontAwesome customizada aqui se desejar">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Estilo visual / Cor do Card</label>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" id="color-blue" value="blue" checked class="accent-blue-600">
+                <span class="w-4 h-4 rounded-full bg-blue-500"></span>
+                <span class="text-[10px] text-slate-500">Azul</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" id="color-emerald" value="emerald" class="accent-emerald-600">
+                <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
+                <span class="text-[10px] text-slate-500">Verde</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" id="color-orange" value="orange" class="accent-orange-600">
+                <span class="w-4 h-4 rounded-full bg-orange-500"></span>
+                <span class="text-[10px] text-slate-500">Laranja</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" id="color-purple" value="purple" class="accent-purple-600">
+                <span class="w-4 h-4 rounded-full bg-purple-500"></span>
+                <span class="text-[10px] text-slate-500">Roxo</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" id="color-rose" value="rose" class="accent-rose-600">
+                <span class="w-4 h-4 rounded-full bg-rose-500"></span>
+                <span class="text-[10px] text-slate-500">Rosa</span>
+              </label>
+              <label class="cursor-pointer border-2 border-transparent p-2 rounded-xl flex flex-col items-center gap-1 bg-slate-50 hover:bg-slate-100">
+                <input type="radio" name="colorOption" id="color-cyan" value="cyan" class="accent-cyan-600">
+                <span class="w-4 h-4 rounded-full bg-cyan-500"></span>
+                <span class="text-[10px] text-slate-500">Ciano</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Resumo Curto (Aparece no Card)</label>
+            <input type="text" id="formShort" required maxlength="120" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: Sensor que deteta pressões físicas rápidas.">
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Link da Mídia (Vídeo YouTube ou URL de Imagem/GIF)</label>
+            <input type="url" id="formMedia" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Ex: https://www.youtube.com/embed/S_B78Gq8oQk ou https://site.com/imagem.gif">
+            <span class="text-[10px] text-slate-400 mt-1 block">Deixe em branco se não houver mídia. Vídeos do YouTube precisam de ter o formato embed (ex: https://www.youtube.com/embed/ID_DO_VIDEO).</span>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">O que é? Como funciona? (Descrição Completa)</label>
+            <textarea id="formDescription" required rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Digite uma explicação detalhada sobre o funcionamento e a utilidade prática..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 text-sm font-bold mb-2">Exemplo Prático</label>
+            <textarea id="formExample" required rows="2" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Como programar ou utilizar este item na prática?"></textarea>
+          </div>
+
+          <div class="flex gap-3">
+            <button type="submit" id="formSubmitBtn" class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer">
+              <i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista
+            </button>
+            <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all cursor-pointer text-sm">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Barra Lateral Administrativa -->
+      <div class="lg:col-span-5 space-y-8">
+        
+        <!-- Bloco de Status da Nuvem -->
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[2.5rem] p-8 shadow-xl">
+          <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
+            <i class="fa-solid fa-cloud text-2xl animate-pulse"></i>
+          </div>
+          <h3 class="text-2xl font-black mb-2">Conexão em Tempo Real</h3>
+          <p class="text-blue-100 text-sm mb-4 leading-relaxed">
+            Sua Robopédia está sincronizada em tempo real com o banco de dados. Qualquer alteração ou cadastro feito nesta tela será publicado de forma instantânea para todos os visitantes do site.
+          </p>
+          <div class="bg-white/10 rounded-xl p-4 border border-white/10">
+            <span class="text-xs uppercase tracking-widest font-black text-blue-200 block mb-1">Status do servidor</span>
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+              <span class="text-xs font-bold text-emerald-100">Sincronizado e Ativo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de Verbetes, Edição e Exclusão -->
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+          <h3 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-blue-500"></i> Verbetes Cadastrados (<span id="adminListCount">0</span>)
+          </h3>
+          <div id="adminVerbetesList" class="space-y-3 max-h-[350px] overflow-y-auto pr-2 scrollbar-none">
+            <!-- Gerado via Javascript -->
+          </div>
+        </div>
+
+        <!-- Ferramenta de Senha -->
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+          <h3 class="text-base font-extrabold text-slate-800 mb-2">🔑 Deseja alterar a sua senha?</h3>
+          <p class="text-xs text-slate-500 mb-4">Insira a sua nova senha para gerar o código seguro para o seu código-fonte.</p>
+          <div class="space-y-3">
+            <input type="text" id="newPassString" placeholder="Nova senha aqui..." class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none">
+            <button onclick="generateCustomHash()" class="w-full py-2 bg-slate-800 hover:bg-slate-950 text-white rounded-lg text-xs font-bold transition-all">
+              Gerar Código Seguro
+            </button>
+            <div id="newHashResult" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-mono break-all text-slate-600">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- RODAPÉ -->
+  <footer class="bg-slate-900 text-slate-400 py-12 text-center border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-4">
+      <p class="text-sm mb-2">&copy; 2026 Robopédia. Criado com ❤️ para professores e estudantes de robótica.</p>
+      <p class="text-xs text-slate-600">Aceda à área administrativa digitando #admin no final da URL.</p>
+    </div>
+  </footer>
+
+  <!-- LÓGICA DE PROGRAMAÇÃO -->
+  <script>
+    let activeCategory = "Todos";
+    let searchQuery = "";
+    let editingId = null; // ID do verbete que está a ser editado no momento
+    
+    // Configurações de Paletas de Cores de acordo com as opções do Admin
+    const colorPalettes = {
+      blue: { color: "from-blue-500 to-indigo-500", badgeBg: "bg-blue-50 text-blue-700 border-blue-200" },
+      emerald: { color: "from-emerald-500 to-teal-500", badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+      orange: { color: "from-orange-500 to-amber-500", badgeBg: "bg-orange-50 text-orange-700 border-orange-200" },
+      purple: { color: "from-purple-500 to-pink-500", badgeBg: "bg-purple-50 text-purple-700 border-purple-200" },
+      rose: { color: "from-rose-500 to-red-500", badgeBg: "bg-rose-50 text-rose-700 border-rose-200" },
+      cyan: { color: "from-cyan-500 to-blue-500", badgeBg: "bg-cyan-50 text-cyan-700 border-cyan-200" }
+    };
+
+    // Monitoriza as alterações de rota/hash no navegador
+    window.onhashchange = function() {
+      handleRouting();
+    };
+
+    function handleRouting() {
+      const hash = window.location.hash;
+      
+      // Oculta todas as telas primárias por defeito
+      document.getElementById("homePage").classList.add("hidden");
+      document.getElementById("detailPage").classList.add("hidden");
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("adminPage").classList.add("hidden");
+      
+      // Controla a visibilidade da pesquisa global
+      document.getElementById("searchBarContainer").classList.add("invisible");
+
+      if (hash === "#admin") {
+        const isAdminLogged = sessionStorage.getItem("robopedia_admin") === "true";
+        if (isAdminLogged) {
+          showAdminPanel();
+        } else {
+          document.getElementById("loginPage").classList.remove("hidden");
+          // Foca no input automaticamente ao abrir
+          setTimeout(() => document.getElementById("adminPasswordInput").focus(), 100);
+        }
+      } else if (hash.startsWith("#item-")) {
+        const itemId = hash.replace("#item-", "");
+        openDetailPage(itemId);
+      } else {
+        // Rota inicial (Home)
+        document.getElementById("homePage").classList.remove("hidden");
+        document.getElementById("searchBarContainer").classList.remove("invisible");
+      }
+    }
+
+    // Função de ver a senha
+    function togglePasswordVisibility() {
+      const input = document.getElementById("adminPasswordInput");
+      const icon = document.getElementById("eyeIcon");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+        icon.classList.add("text-blue-600");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+        icon.classList.remove("text-blue-600");
+      }
+      input.focus();
+    }
+
+    // Funções do Teclado Virtual QWERTY
+    function typeLetter(letter) {
+      const input = document.getElementById("adminPasswordInput");
+      input.value += letter;
+      input.focus();
+    }
+
+    function backspace() {
+      const input = document.getElementById("adminPasswordInput");
+      input.value = input.value.slice(0, -1);
+      input.focus();
+    }
+
+    function clearPassword() {
+      const input = document.getElementById("adminPasswordInput");
+      input.value = "";
+      input.focus();
+    }
+
+    // Validação da Senha - Simplificada e 100% nativa (Base64)
+    function attemptLogin() {
+      const inputPass = document.getElementById("adminPasswordInput").value.trim().toLowerCase();
+      
+      if (!inputPass) {
+        showCustomNotice("Digite a senha primeiro!", "error");
+        return;
+      }
+
+      // Converte a senha digitada usando a mesma lógica Base64 nativa 
+      const encodedInput = btoa(unescape(encodeURIComponent(inputPass)));
+
+      if (encodedInput === ADMIN_TOKEN) {
+        sessionStorage.setItem("robopedia_admin", "true");
+        document.getElementById("adminPasswordInput").value = "";
+        
+        // Garante que o input volte a ficar como 'password'
+        const input = document.getElementById("adminPasswordInput");
+        input.type = "password";
+        document.getElementById("eyeIcon").className = "fa-solid fa-eye";
+
+        showCustomNotice("Acesso permitido! Bem-vindo.", "success");
+        showAdminPanel();
+      } else {
+        showCustomNotice("Senha incorreta! Tente novamente.", "error");
+        clearPassword();
+      }
+    }
+
+    // Exibe o painel administrativo
+    function showAdminPanel() {
+      window.location.hash = "#admin";
+      document.getElementById("homePage").classList.add("hidden");
+      document.getElementById("detailPage").classList.add("hidden");
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("adminPage").classList.remove("hidden");
+      document.getElementById("searchBarContainer").classList.add("invisible");
+      
+      updateAdminCategoriesSelect();
+      renderAdminVerbetesList();
+    }
+
+    function logout() {
+      sessionStorage.removeItem("robopedia_admin");
+      showCustomNotice("Sessão administrativa encerrada.", "success");
+      goHome();
+    }
+
+    // Gera de forma dinâmica o menu de categorias na Home
+    function generateCategoriesMenu() {
+      const catContainer = document.getElementById("dynamicCategories");
+      const categories = [...new Set(database.map(item => item.category))];
+      
+      catContainer.innerHTML = "";
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.id = `catBtn-${category}`;
+        btn.className = "category-btn shrink-0 px-6 py-3 bg-white text-slate-600 font-bold rounded-2xl shadow-sm border-2 border-transparent transition-all hover:scale-105 hover:bg-slate-100";
+        btn.textContent = category;
+        btn.onclick = () => selectCategory(category);
+        catContainer.appendChild(btn);
+      });
+    }
+
+    // Atualiza opções do select de categorias no cadastro
+    function updateAdminCategoriesSelect() {
+      const select = document.getElementById("formCategory");
+      const currentCategoryValue = select.value;
+      const categories = [...new Set(database.map(item => item.category))];
+      
+      select.innerHTML = "";
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+
+      // Restaura o valor se ele existir na lista
+      if (categories.includes(currentCategoryValue)) {
+        select.value = currentCategoryValue;
+      }
+    }
+
+    // Adiciona uma categoria nova ao banco via input simples
+    function addNewCategoryPrompt() {
+      const newCatName = prompt("Digite o nome da nova categoria de robótica:");
+      if (newCatName && newCatName.trim() !== "") {
+        const select = document.getElementById("formCategory");
+        const formattedCat = newCatName.trim();
+        
+        const opt = document.createElement("option");
+        opt.value = formattedCat;
+        opt.textContent = formattedCat;
+        select.appendChild(opt);
+        select.value = formattedCat;
+        showCustomNotice(`Categoria "${formattedCat}" adicionada à lista temporária.`, "success");
+      }
+    }
+
+    // Monitorização do input do título do form para automatizar a criação do ID do elemento
+    function autoGenerateId() {
+      if (editingId !== null) return; // Não gera novo ID se estiver a editar um existente
+      
+      const titleVal = document.getElementById("formTitle").value;
+      const cleanId = titleVal
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentuações
+        .replace(/[^a-z0-9\s-]/g, "")   // Remove caracteres especiais
+        .replace(/\s+/g, "-")          // Troca espaços por hífens
+        .replace(/-+/g, "-");          // Evita hífens duplos
+      document.getElementById("formId").value = cleanId;
+    }
+
+    // Inicializa a edição de um verbete existente
+    function startEdit(id) {
+      const item = database.find(x => x.id === id);
+      if (!item) return;
+
+      editingId = id;
+
+      // Altera títulos e botões do formulário
+      document.getElementById("formSectionTitle").innerHTML = `<i class="fa-solid fa-pencil text-amber-500"></i> Editar Verbete: ${item.title}`;
+      document.getElementById("formSubmitBtn").className = "flex-1 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer";
+      document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Alterações`;
+      document.getElementById("cancelEditBtn").classList.remove("hidden");
+
+      // Preenche os campos do formulário
+      document.getElementById("formTitle").value = item.title;
+      document.getElementById("formId").value = item.id;
+      document.getElementById("formId").classList.add("bg-slate-100"); // Realça que não se muda o ID
+      
+      // Ajusta Categoria
+      const selectCat = document.getElementById("formCategory");
+      if (![...selectCat.options].some(opt => opt.value === item.category)) {
+        const opt = document.createElement("option");
+        opt.value = item.category;
+        opt.textContent = item.category;
+        selectCat.appendChild(opt);
+      }
+      selectCat.value = item.category;
+
+      // Ajusta Ícone
+      const selectIcon = document.getElementById("formIcon");
+      if ([...selectIcon.options].some(opt => opt.value === item.icon)) {
+        selectIcon.value = item.icon;
+        document.getElementById("formIconCustom").value = "";
+      } else {
+        document.getElementById("formIconCustom").value = item.icon;
+      }
+
+      // Procura qual cor combina com a classe de gradiente para marcar o botão rádio
+      let detectedColor = "blue";
+      for (const [key, val] of Object.entries(colorPalettes)) {
+        if (item.color === val.color) {
+          detectedColor = key;
+          break;
+        }
+      }
+      const radioBtn = document.getElementById(`color-${detectedColor}`);
+      if (radioBtn) radioBtn.checked = true;
+
+      // Campos de texto restantes
+      document.getElementById("formShort").value = item.short;
+      document.getElementById("formMedia").value = item.media;
+      document.getElementById("formDescription").value = item.description;
+      document.getElementById("formExample").value = item.example;
+
+      // Foca no primeiro campo e sobe a tela
+      document.getElementById("formTitle").focus();
+      window.scrollTo({ top: document.getElementById("adminPage").offsetTop, behavior: "smooth" });
+    }
+
+    // Cancela a edição em andamento
+    function cancelEdit() {
+      editingId = null;
+
+      // Repõe aspeto do formulário
+      document.getElementById("formSectionTitle").innerHTML = `<i class="fa-solid fa-square-plus text-blue-500"></i> Criar Novo Verbete`;
+      document.getElementById("formSubmitBtn").className = "flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all cursor-pointer";
+      document.getElementById("formSubmitBtn").innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> Adicionar Verbete à Lista`;
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+      document.getElementById("formId").classList.remove("bg-slate-100");
+
+      document.getElementById("verbeteForm").reset();
+      document.getElementById("formIconCustom").value = "";
+      autoGenerateId();
+    }
+
+    // Guarda o verbete diretamente no Firebase Firestore
+    async function saveVerbete(e) {
+      e.preventDefault();
+      
+      const formIdVal = document.getElementById("formId").value;
+      
+      // Captura a cor selecionada
+      const colorSelected = document.querySelector('input[name="colorOption"]:checked').value;
+      const palette = colorPalettes[colorSelected];
+
+      // Se houver ícone customizado no campo, prefere ele
+      const customIcon = document.getElementById("formIconCustom").value.trim();
+      const finalIcon = customIcon !== "" ? customIcon : document.getElementById("formIcon").value;
+
+      const verbeteData = {
+        id: formIdVal,
+        category: document.getElementById("formCategory").value,
+        icon: finalIcon,
+        color: palette.color,
+        badgeBg: palette.badgeBg,
+        title: document.getElementById("formTitle").value.trim(),
+        short: document.getElementById("formShort").value.trim(),
+        description: document.getElementById("formDescription").value.trim(),
+        example: document.getElementById("formExample").value.trim(),
+        media: document.getElementById("formMedia").value.trim()
+      };
+
+      try {
+        if (editingId !== null) {
+          // Gravação / Atualização no Firebase
+          const docRef = window.doc(window.db, 'artifacts', 'robopedia', 'public', 'data', 'verbetes', editingId);
+          await window.setDoc(docRef, verbeteData);
+          showCustomNotice("Verbete atualizado na nuvem!", "success");
+          cancelEdit();
+        } else {
+          // Criação no Firebase
+          const docRef = window.doc(window.db, 'artifacts', 'robopedia', 'public', 'data', 'verbetes', formIdVal);
+          await window.setDoc(docRef, verbeteData);
+          
+          document.getElementById("verbeteForm").reset();
+          document.getElementById("formIconCustom").value = "";
+          autoGenerateId();
+          showCustomNotice("Verbete salvo na nuvem com sucesso!", "success");
+        }
+      } catch (error) {
+        console.error("Erro ao salvar no banco: ", error);
+        showCustomNotice("Erro ao tentar salvar na nuvem.", "error");
+      }
+    }
+
+    // Renderiza a lista de exclusão/edição rápida de verbetes no painel
+    function renderAdminVerbetesList() {
+      const listContainer = document.getElementById("adminVerbetesList");
+      document.getElementById("adminListCount").textContent = database.length;
+      listContainer.innerHTML = "";
+
+      database.forEach(item => {
+        const itemRow = document.createElement("div");
+        itemRow.className = "flex items-center justify-between bg-slate-50 hover:bg-slate-100 p-3 rounded-xl border border-slate-100 transition-colors";
+        
+        itemRow.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            <span class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center text-slate-600 text-sm shrink-0">
+              <i class="${item.icon}"></i>
+            </span>
+            <div class="truncate">
+              <p class="font-bold text-slate-800 text-sm leading-tight truncate">${item.title}</p>
+              <p class="text-[10px] text-slate-400">${item.category}</p>
+            </div>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <!-- Botão Editar -->
+            <button onclick="startEdit('${item.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors cursor-pointer" title="Editar este verbete">
+              <i class="fa-solid fa-pencil text-xs"></i>
+            </button>
+            <!-- Botão Deletar -->
+            <button onclick="deleteVerbete('${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-colors cursor-pointer" title="Remover este verbete">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+        listContainer.appendChild(itemRow);
+      });
+    }
+
+    // Elimina um verbete de forma assíncrona no Firestore
+    async function deleteVerbete(id) {
+      const confirmRemove = confirm("Tem a certeza que deseja excluir permanentemente este verbete?");
+      if (!confirmRemove) return;
+
+      if (editingId === id) {
+        cancelEdit();
+      }
+
+      try {
+        const docRef = window.doc(window.db, 'artifacts', 'robopedia', 'public', 'data', 'verbetes', id);
+        await window.deleteDoc(docRef);
+        showCustomNotice("Verbete removido do servidor!", "success");
+      } catch (error) {
+        console.error("Erro ao deletar: ", error);
+        showCustomNotice("Erro ao excluir do servidor.", "error");
+      }
+    }
+
+    // Filtra categorias pela home
+    function selectCategory(category) {
+      activeCategory = category;
+      document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.classList.remove("bg-blue-600", "text-white", "shadow-md");
+        btn.classList.add("bg-white", "text-slate-600", "shadow-sm", "hover:bg-slate-100");
+      });
+
+      const selectedBtn = document.getElementById(`catBtn-${category}`);
+      if (selectedBtn) {
+        selectedBtn.classList.remove("bg-white", "text-slate-600", "shadow-sm", "hover:bg-slate-100");
+        selectedBtn.classList.add("bg-blue-600", "text-white", "shadow-md");
+      }
+
+      renderFeed();
+    }
+
+    // Monitoriza a pesquisa
+    function filterDatabase() {
+      searchQuery = document.getElementById("searchInput").value.toLowerCase();
+      renderFeed();
+    }
+
+    // Filtra e Renderiza os Cards na Tela Inicial
+    function renderFeed() {
+      const cardsGrid = document.getElementById("cardsGrid");
+      const emptyState = document.getElementById("emptyState");
+      cardsGrid.innerHTML = "";
+
+      if (!window.database) return;
+
+      const filteredItems = database.filter(item => {
+        const matchesCategory = (activeCategory === "Todos" || item.category === activeCategory);
+        const matchesSearch = (
+          item.title.toLowerCase().includes(searchQuery) ||
+          item.short.toLowerCase().includes(searchQuery) ||
+          item.description.toLowerCase().includes(searchQuery) ||
+          item.category.toLowerCase().includes(searchQuery)
+        );
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filteredItems.length === 0) {
+        cardsGrid.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      cardsGrid.classList.remove("hidden");
+      emptyState.classList.add("hidden");
+
+      filteredItems.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "group flex flex-col bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-100 relative cursor-pointer h-full";
+        card.onclick = () => {
+          window.location.hash = `#item-${item.id}`;
+        };
+
+        card.innerHTML = `
+          <!-- Categoria Badge -->
+          <span class="absolute top-6 right-6 inline-block px-3 py-1 text-[10px] font-black rounded-xl uppercase tracking-wider z-10 ${item.badgeBg}">
+            ${item.category}
+          </span>
+          
+          <!-- Ícone do Componente -->
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center shrink-0 mb-6 shadow-md group-hover:scale-110 transition-transform duration-300 group-hover:rotate-3 text-2xl">
+            <i class="${item.icon}"></i>
+          </div>
+          
+          <!-- Textos -->
+          <h3 class="text-2xl font-black text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+            ${item.title}
+          </h3>
+          <p class="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-4">
+            ${item.short}
+          </p>
+          
+          <!-- Botão Conhecer Mais -->
+          <span class="mt-auto inline-flex items-center gap-1.5 text-blue-600 font-extrabold text-sm hover:text-blue-800">
+            Conhecer <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+          </span>
+        `;
+        cardsGrid.appendChild(card);
+      });
+    }
+
+    // Abre a visualização de detalhes de um item específico
+    function openDetailPage(id) {
+      if (!window.database) return;
+      const item = database.find(x => x.id === id);
+      if (!item) {
+        goHome();
+        return;
+      }
+
+      // Configura Ícone, Cores e Badges
+      const iconBox = document.getElementById("detailIconBox");
+      iconBox.className = `w-28 h-28 md:w-36 md:h-36 rounded-3xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center shrink-0 shadow-lg text-5xl transform rotate-3 ring-8 ring-white`;
+      document.getElementById("detailIcon").className = item.icon;
+      
+      const badge = document.getElementById("detailCategoryBadge");
+      badge.className = `inline-block px-4 py-1.5 text-xs font-black rounded-xl uppercase tracking-wider border ${item.badgeBg}`;
+      badge.textContent = item.category;
+
+      // Alimenta textos básicos
+      document.getElementById("detailTitle").textContent = item.title;
+      document.getElementById("detailShort").textContent = item.short;
+      document.getElementById("detailDescription").textContent = item.description;
+      document.getElementById("detailExample").textContent = item.example;
+
+      // Trata as Mídias
+      const mediaBox = document.getElementById("mediaBox");
+      mediaBox.innerHTML = "";
+      
+      if (item.media && item.media.trim() !== "") {
+        mediaBox.classList.remove("hidden");
+        
+        if (item.media.includes("youtube.com") || item.media.includes("youtu.be")) {
+          // Vídeo do YouTube
+          mediaBox.innerHTML = `
+            <div class="video-responsive shadow-lg mb-4">
+              <iframe src="${item.media}" title="Demonstração do Componente" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+          `;
+        } else {
+          // Presume que é um link de imagem ou GIF comum
+          mediaBox.innerHTML = `
+            <img src="${item.media}" alt="${item.title}" class="w-full max-h-[400px] object-cover rounded-2.5xl shadow-md mb-4 hover:scale-[1.01] transition-transform duration-300">
+          `;
+        }
+      } else {
+        mediaBox.classList.add("hidden");
+      }
+
+      // Alterna as visualizações de tela
+      document.getElementById("homePage").classList.add("hidden");
+      document.getElementById("searchBarContainer").classList.add("invisible");
+      document.getElementById("detailPage").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Retorna para a tela de lista de verbetes
+    function goHome() {
+      window.location.hash = "";
+      handleRouting();
+    }
+
+    // Exibe notificação personalizada elegante
+    function showCustomNotice(message, type = "success") {
+      const toast = document.getElementById("customToast");
+      const iconBox = document.getElementById("toastIconBox");
+      const icon = document.getElementById("toastIcon");
+      const title = document.getElementById("toastTitle");
+      const text = document.getElementById("toastMessage");
+
+      text.textContent = message;
+
+      if (type === "success") {
+        iconBox.className = "w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500 text-white shrink-0 shadow-lg shadow-emerald-200";
+        icon.className = "fa-solid fa-circle-check";
+        title.textContent = "Sucesso";
+      } else {
+        iconBox.className = "w-10 h-10 rounded-xl flex items-center justify-center bg-rose-500 text-white shrink-0 shadow-lg shadow-rose-200";
+        icon.className = "fa-solid fa-circle-xmark";
+        title.textContent = "Atenção";
+      }
+
+      // Anima entrada
+      toast.classList.remove("translate-y-[-150%]");
+      toast.classList.add("translate-y-0");
+
+      setTimeout(() => {
+        // Anima saída
+        toast.classList.remove("translate-y-0");
+        toast.classList.add("translate-y-[-150%]");
+      }, 3500);
+    }
+
+    // Função para auxiliar os utilizadores que desejam trocar a sua senha
+    function generateCustomHash() {
+      const passString = document.getElementById("newPassString").value.trim().toLowerCase();
+      if (passString === "") {
+        showCustomNotice("Digite uma senha no campo antes de clicar!", "error");
+        return;
+      }
+      
+      const outputHash = btoa(unescape(encodeURIComponent(passString)));
+
+      const outputBox = document.getElementById("newHashResult");
+      outputBox.innerHTML = `<strong>Senha:</strong> ${passString}<br><strong>Código Gerado:</strong><br><span class="text-indigo-600">"${outputHash}"</span><br><br><span class="text-[9px]">Copie o código em azul acima (sem as aspas) e substitua a variável <strong>ADMIN_TOKEN</strong> no código do seu index.html!</span>`;
+      outputBox.classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
