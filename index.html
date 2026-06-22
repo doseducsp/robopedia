@@ -24,7 +24,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 flex flex-col">
 
     <!-- CABEÇALHO -->
     <header class="bg-indigo-600 text-white shadow-lg sticky top-0 z-40">
@@ -43,7 +43,7 @@
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
 
     <!-- TELA PRINCIPAL (PÚBLICA) -->
-    <main id="view-public" class="max-w-6xl mx-auto px-4 py-8">
+    <main id="view-public" class="max-w-6xl mx-auto px-4 py-8 flex-grow">
         <!-- Hero Section e Busca -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-10 mb-8 text-center">
             <h2 class="text-3xl md:text-5xl font-bold text-gray-800 mb-4">Aprenda Robótica de um jeito Fácil!</h2>
@@ -85,7 +85,7 @@
     </main>
 
     <!-- TELA ADMIN -->
-    <main id="view-admin" class="max-w-6xl mx-auto px-4 py-8 hide">
+    <main id="view-admin" class="max-w-6xl mx-auto px-4 py-8 hide flex-grow">
         
         <!-- TELA DE LOGIN DO ADMIN -->
         <div id="admin-login" class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center mt-10 hide">
@@ -277,6 +277,22 @@
             </div>
         </div>
     </main>
+
+    <!-- RODAPÉ E LICENÇA CREATIVE COMMONS -->
+    <footer class="w-full bg-slate-100 border-t border-slate-200 mt-auto py-8 px-4 text-center flex flex-col items-center justify-center gap-4">
+        <p class="text-slate-700 font-semibold text-lg">&copy; 2026, Diego Oliveira.</p>
+        
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" class="transition-transform hover:scale-105 inline-block">
+            <img alt="Licença Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" />
+        </a>
+        
+        <p class="text-sm text-slate-500 max-w-xl leading-relaxed">
+            Este trabalho está licenciado com uma Licença <br class="hidden sm:block">
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" class="text-indigo-600 hover:text-indigo-800 hover:underline font-semibold transition-colors">
+                Creative Commons - Atribuição-NãoComercial-SemDerivações 4.0 Internacional
+            </a>.
+        </p>
+    </footer>
 
     <!-- MODAIS E POPUPS -->
     <!-- Modal Picker de Emoji -->
@@ -496,12 +512,10 @@
             }, 3000);
         };
 
-        // Função crucial: "Junta" o verbete com a categoria dele (para saber a cor e o ícone na hora de exibir)
         const resolveCategory = (verbete) => {
             let cat = null;
             if (verbete.categoryId) cat = state.categories.find(c => c.id === verbete.categoryId);
             if (!cat && verbete.category) cat = state.categories.find(c => c.name.toLowerCase() === verbete.category.toLowerCase());
-            // Aplica um design padrão caso fique órfão (ex: a categoria original foi apagada)
             return cat || { id: 'legacy', name: verbete.category || 'Sem Categoria', icon: verbete.icon || '❔', color: 'slate-light' };
         };
 
@@ -619,7 +633,6 @@
             
             container.innerHTML = html;
 
-            // Sort buttons update
             const btnR = document.getElementById('btn-sort-random');
             const btnAZ = document.getElementById('btn-sort-az');
             if(btnR) btnR.className = `px-4 py-2 rounded-md font-semibold text-sm transition ${state.sortOrder === 'random' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`;
@@ -630,28 +643,23 @@
             const container = document.getElementById('cards-container');
             const emptyState = document.getElementById('empty-state');
             
-            // Segurança importante: impede erro se os elementos não estiverem prontos no DOM
             if(!container || !emptyState) return;
             
             let list = [...state.verbetes];
             
-            // Filtro por categoria (Tratando retrocompatibilidade)
             if (state.filterCategoryId !== 'Todas') {
                 list = list.filter(v => {
                     if (v.categoryId) return v.categoryId === state.filterCategoryId;
-                    // Fallback para itens antigos
                     const legacyCat = state.categories.find(c => c.id === state.filterCategoryId);
                     return legacyCat && v.category === legacyCat.name;
                 });
             }
             
-            // Filtro de busca
             if (state.searchQuery) {
                 const q = state.searchQuery.toLowerCase();
                 list = list.filter(v => v.title.toLowerCase().includes(q) || v.summary.toLowerCase().includes(q));
             }
             
-            // Ordem
             if (state.sortOrder === 'az') list.sort((a, b) => a.title.localeCompare(b.title));
             else list.sort((a, b) => a.id.localeCompare(b.id)); 
             
@@ -678,7 +686,6 @@
             }).join('');
         }
 
-        // --- ADMIN VIEW RENDERERS ---
         function renderAdminVerbetes() {
             const tbody = document.getElementById('table-verbetes-body');
             if(!tbody) return;
@@ -759,7 +766,6 @@
             window.closeModal('modal-emoji');
         };
 
-        // Modal de Visualização (Público)
         window.openVerbete = (id) => {
             const v = state.verbetes.find(item => item.id === id);
             if (!v) return;
@@ -794,7 +800,6 @@
             document.getElementById('modal-verbete').classList.remove('hide');
         };
 
-        // --- CRUD VERBETES ---
         const verbeteForm = document.getElementById('admin-verbete-form');
         if(verbeteForm) verbeteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -815,7 +820,7 @@
             const data = {
                 title: document.getElementById('vform-title').value,
                 categoryId: categoryId,
-                category: categoryObj ? categoryObj.name : '', // Guarda o nome também para legado/segurança
+                category: categoryObj ? categoryObj.name : '',
                 summary: document.getElementById('vform-summary').value,
                 mediaUrl: document.getElementById('vform-media').value,
                 explanation: document.getElementById('vform-explanation').value,
@@ -845,12 +850,10 @@
             document.getElementById('form-verbete-title').innerHTML = `<i class="fas fa-edit text-blue-500 mr-2"></i> Editando Verbete`;
             document.getElementById('vform-title').value = v.title || '';
             
-            // Lógica para selecionar a categoria (mesmo se o verbete for legado)
             const catSelect = document.getElementById('vform-category');
             if (v.categoryId) {
                 catSelect.value = v.categoryId;
             } else if (v.category) {
-                // Tenta achar categoria antiga pelo nome
                 const matched = state.categories.find(c => c.name.toLowerCase() === v.category.toLowerCase());
                 if(matched) catSelect.value = matched.id;
             }
@@ -868,7 +871,6 @@
             document.getElementById('form-verbete-title').innerHTML = `<i class="fas fa-plus-circle text-green-500 mr-2"></i> Novo Verbete`;
         };
 
-        // --- CRUD CATEGORIAS ---
         const catForm = document.getElementById('admin-category-form');
         if(catForm) catForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -909,7 +911,6 @@
             document.getElementById('cform-icon').value = c.icon || '🤖';
             document.getElementById('cform-emoji-display').innerText = c.icon || '🤖';
             
-            // Marca o radio button da cor correta
             document.getElementById('cform-color').value = c.color || 'blue-light';
             const radio = document.querySelector(`input[name="cat_color"][value="${c.color}"]`);
             if(radio) radio.checked = true;
@@ -928,7 +929,6 @@
             document.getElementById('form-cat-title').innerHTML = `<i class="fas fa-tags text-green-500 mr-2"></i> Nova Categoria`;
         };
 
-        // --- SISTEMA DE EXCLUSÃO GENÉRICO (CORRIGIDO) ---
         window.confirmDelete = (type, id) => {
             state.deleteItemType = type;
             state.deleteItemId = id;
@@ -944,7 +944,6 @@
             btn.disabled = true;
 
             try {
-                // Rota corrigida: Informando corretamente a coleção e o ID do documento
                 const colName = state.deleteItemType === 'verbete' ? 'robopedia' : 'robopedia_categories';
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', colName, state.deleteItemId);
                 
@@ -962,7 +961,6 @@
             }
         });
 
-        // Inicialização de componentes
         initEmojiPicker();
         initColorPicker();
     </script>
